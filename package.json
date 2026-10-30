@@ -1,0 +1,13 @@
+{
+  "name": "math-adventure",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node test/generators.test.mjs && node test/learning.test.mjs && node test/gym.test.mjs && node test/lab.test.mjs",
+    "deploy": "node build.mjs && wrangler deploy",
+    "db:init": "wrangler d1 execute mathtutor --remote --file=worker/schema.sql"
+  },
+  "dependencies": { "jose": "5.9.6", "react": "19.1.0", "react-dom": "19.1.0" },
+  "devDependencies": { "esbuild": "0.23.0", "wrangler": "^4.151.0" }
+}

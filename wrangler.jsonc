@@ -1,0 +1,18 @@
+{
+  // Math Adventure: static app + API on one Worker, at mathtutor.friedmann.vip
+  "name": "mathtutor",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-09-01",
+  "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": ["/api/*"], "not_found_handling": "single-page-application" },
+  "routes": [{ "pattern": "mathtutor.friedmann.vip", "custom_domain": true }],
+  "workers_dev": false,
+  "d1_databases": [{ "binding": "DB", "database_name": "mathtutor", "database_id": "24581cd0-e350-48d1-9546-0e22622520ee" }],
+  "vars": {
+    // Filled in after the Access application is created (Zero Trust > Access > Applications).
+    "TEAM_DOMAIN": "https://mute-breeze-7c9c.cloudflareaccess.com",
+    "POLICY_AUD": "828b4507c03b225f480ebd1453b53bb2e30bcaf030de3a139dbf9549cbe981e2",
+    "AI_MODEL": "claude-haiku-5-5",
+    "AI_DAILY_LIMIT": "300"
+  }
+  // Secret (not in this file): npx wrangler secret put ANTHROPIC_API_KEY
+}
