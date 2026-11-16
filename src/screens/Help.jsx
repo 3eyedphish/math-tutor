@@ -8,7 +8,8 @@ const NO_AI = "I can't answer questions right now. Try a hint or the first step.
 
 // The help panel under a question. Every kind of help she uses is reported
 // with onUse(kind), so a question answered after help doesn't count as clean.
-export default function Help({ part, world, profile, onUse, onLesson, onClose }) {
+// context / answerText tell the AI where she is and what the picture shows (Gym, Lab).
+export default function Help({ part, world, profile, onUse, onLesson, onClose, context, picture, answerText, lessonLabel = "Teach me with a mini-lesson" }) {
   const [shown, setShown] = useState([]); // [{kind, text, asked?}]
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
@@ -24,7 +25,7 @@ export default function Help({ part, world, profile, onUse, onLesson, onClose })
 
   const ask = async (question) => {
     setBusy(true);
-    const p = helpPrompt(profile.name, world, part, question);
+    const p = helpPrompt(profile.name, world, part, question, { context, picture, answer: answerText });
     let t = await store.ai(p.system, p.user, 220);
     if (t && revealsAnswer(t, part)) t = part.hint || "";
     setBusy(false);
@@ -94,7 +95,7 @@ export default function Help({ part, world, profile, onUse, onLesson, onClose })
         {(used("hint") || !part.hint) && !used("step") && part.steps?.length > 1 && <button className="help-btn" onClick={() => add({ kind: "step", text: part.steps[0] })}>🪜<span>Show me the first step</span></button>}
         <button className="help-btn" disabled={busy} onClick={anotherWay}>🔄<span>Explain it another way</span></button>
         {!askOpen && <button className="help-btn" disabled={busy} onClick={() => { setAskOpen(true); if (Recognition) listen(); }}>🎤<span>Ask my own question</span></button>}
-        <button className="help-btn" onClick={() => { onUse("lesson"); onLesson(); }}>📚<span>Teach me with a mini-lesson</span></button>
+        {onLesson && <button className="help-btn" onClick={() => { onUse("lesson"); onLesson(); }}>📚<span>{lessonLabel}</span></button>}
       </div>
       <p className="fine">Using help is smart! Questions you answer with help come back later so you can try them on your own.</p>
       <div ref={end} />

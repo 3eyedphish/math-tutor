@@ -6,6 +6,8 @@ import { MISTAKES } from "../engine/mistakes.js";
 import * as store from "../engine/store.js";
 import { Keypad, useHardwareKeys, showTyped, editTyped, Choices, MultiSelect, Blanks, Particles, speak } from "../ui/components.jsx";
 import { LabVisual } from "./visuals.jsx";
+import Help from "../screens/Help.jsx";
+import { describeWork } from "../engine/picture.js";
 
 const CHEERS = ["Clever thinking!", "You cracked it!", "Sharp!", "Brainy!", "Nice detective work!"];
 const NOT_QUITE = ["Not quite!", "Good try!", "Almost!"];
@@ -23,7 +25,9 @@ export default function Lab({ profile, state, world, persist, onClose }) {
   const [sel, setSel] = useState(0); // the number being placed in the string game
   const [mode, setMode] = useState("add"); // minicomputer: add or remove checkers
   const [feedback, setFeedback] = useState(null);
-  const [shown, setShown] = useState(false);
+  const [help, setHelp] = useState([]); // kinds of 🙋 Help used on this puzzle
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [peek, setPeek] = useState(null); // "How it works" opened from Help, over the current puzzle
   const [intro, setIntro] = useState(null); // station whose intro is showing
   const [burst, setBurst] = useState(0);
   const queue = useRef([]);
@@ -31,9 +35,10 @@ export default function Lab({ profile, state, world, persist, onClose }) {
   const t0 = useRef(0);
   const answered = useRef(false);
   const lab = labState(state);
+  const shown = help.length > 0;
 
   const startItem = useCallback((it) => {
-    setItem(it); setResp(emptyResponse(it)); setActiveBlank(0); setSel(0); setMode("add"); setFeedback(null); setShown(false);
+    setItem(it); setResp(emptyResponse(it)); setActiveBlank(0); setSel(0); setMode("add"); setFeedback(null); setHelp([]); setHelpOpen(false); setPeek(null);
     t0.current = Date.now(); answered.current = false;
     window.__mtCurrent = it; // lets automated tests read the current question
   }, []);
@@ -74,7 +79,7 @@ export default function Lab({ profile, state, world, persist, onClose }) {
     const ok = labCorrect(item, resp);
     const ms = Date.now() - t0.current;
     const given = givenText(item, resp);
-    const res = recordLab(state, item, { correct: ok, help: shown ? ["show"] : [], ms, given });
+    const res = recordLab(state, item, { correct: ok, help, ms, given });
     const s = sess.current;
     s.n++;
     if (res.clean) { s.clean++; s.stars++; state.stars++; }
@@ -83,7 +88,7 @@ export default function Lab({ profile, state, world, persist, onClose }) {
     store.logEvent(profile.id, { t: Date.now(), skill: item.skill, level: item.level, approach: "lab", correct: ok, firstTry: true, hint: shown, ms, q: item.text.slice(0, 300), given: String(given).slice(0, 200), answer: JSON.stringify(item.answer).slice(0, 200) });
     if (ok) {
       setBurst((b) => b + 1);
-      setFeedback({ kind: "right", msg: `${item.reviewOf ? "🔁 Second chance: got it!" : pickOne(CHEERS)}${res.clean ? "  +1 ⭐" : ""}` });
+      setFeedback({ kind: "right", msg: `${item.reviewOf ? "🔁 Second chance: got it!" : shown ? "🙋 Got it with help!" : pickOne(CHEERS)}${res.clean ? "  +1 ⭐" : ""}` });
     } else {
       setFeedback({ kind: "reveal", msg: `${pickOne(NOT_QUITE)} ${item.answerType === "mini" ? miniFeedback(item, resp) : "Here's how it works."}`, mistake: res.mistake });
     }
@@ -105,7 +110,9 @@ export default function Lab({ profile, state, world, persist, onClose }) {
     if (item.answerType === "blanks") setResp((arr) => arr.map((v, i) => (i === activeBlank ? editTyped(v || "", k).slice(0, 7) : v)));
   }, [item, feedback, phase, activeBlank]);
   const onEnter = useCallback(() => { if (feedback) next(); else submit(); });
-  useHardwareKeys(onKey, onEnter, phase === "rep" && !!item);
+  useHardwareKeys(onKey, onEnter, phase === "rep" && !!item && !peek);
+  // Any help she uses means this puzzle doesn't count as clean.
+  const markHelp = (k) => setHelp((h) => [...h, k]);
 
   // String game: put the chosen number in a region, then move on to the next unplaced one.
   const place = (r) => {
@@ -127,6 +134,20 @@ export default function Lab({ profile, state, world, persist, onClose }) {
         <LabVisual v={it.example} placed={it.example.placed} />
         <p className="sub center">{it.exampleNote}</p>
         <button className="primary big" onClick={done}>Got it! Let's try 🧠</button>
+      </div>
+    );
+  }
+
+  if (phase === "rep" && peek) {
+    const it = INTRO[peek];
+    return (
+      <div className="card lab">
+        <div className="big-emoji">{STATION[peek].emoji}</div>
+        <h1 className="title">{it.title}</h1>
+        <ol className="lab-intro">{it.lines.map((l, i) => <li key={i}>{l}</li>)}</ol>
+        <LabVisual v={it.example} placed={it.example.placed} />
+        <p className="sub center">{it.exampleNote}</p>
+        <button className="primary big" onClick={() => setPeek(null)}>Back to my puzzle 🧠</button>
       </div>
     );
   }
@@ -177,6 +198,7 @@ export default function Lab({ profile, state, world, persist, onClose }) {
   const v = item.visual;
   const preds = v?.kind === "strings" ? v.preds : null;
   const sortPlaced = item.answerType === "sort" ? item.choices.map((c, i) => (resp[i] ? { n: Number(c), r: resp[i] } : null)).filter(Boolean) : null;
+  const helpContext = `Thinking Lab, ${st.title} station. How it works: ${INTRO[item.station].lines.join(" ")}${item.reviewOf ? " She missed this one before; this is her second chance." : ""} ${describeWork(item, resp)}`.trim();
   const revealPlaced = item.answerType === "sort" && feedback?.kind === "reveal" ? item.choices.map((c, i) => ({ n: Number(c), r: item.answer[i], wrong: resp[i] !== item.answer[i] })) : null;
   return (
     <div className="game">
@@ -217,7 +239,6 @@ export default function Lab({ profile, state, world, persist, onClose }) {
           </>
         )}
         {v && item.answerType !== "mini" && item.answerType !== "sort" && <LabVisual v={v} />}
-        {shown && !done && item.hint && <div className="hint">💡 {item.hint}</div>}
 
         <div className="answer-area">
           {item.answerType === "number" && <div className="typed">{showTyped(resp) || "?"}</div>}
@@ -226,6 +247,8 @@ export default function Lab({ profile, state, world, persist, onClose }) {
           {item.answerType === "blanks" && <Blanks template={item.template} values={resp} active={activeBlank} onFocus={setActiveBlank} />}
         </div>
 
+        {helpOpen && !done && <Help key={`lab-${idx}`} part={item} world={world} profile={profile} context={helpContext} answerText={labAnswerText(item)} onUse={markHelp}
+          onLesson={() => setPeek(item.station)} lessonLabel="Show me how it works" onClose={() => setHelpOpen(false)} />}
         {feedback && <div className={`feedback ${feedback.kind}`}>{feedback.msg}</div>}
         {feedback?.kind === "reveal" && (
           <div className="reveal">
@@ -236,7 +259,7 @@ export default function Lab({ profile, state, world, persist, onClose }) {
           </div>
         )}
         <div className="controls">
-          {!done && !shown && <button className="help-main" onClick={() => setShown(true)}>💡 Hint</button>}
+          {!done && !helpOpen && <button className="help-main" onClick={() => setHelpOpen(true)}>🙋 Help</button>}
           {!done && <button className="primary" disabled={!ready(item, resp)} onClick={submit}>Check ✓</button>}
           {feedback?.kind === "reveal" && <button className="primary" onClick={next}>Next →</button>}
         </div>

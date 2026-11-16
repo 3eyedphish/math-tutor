@@ -55,13 +55,19 @@ export const UNITS = [
       { id: "3-8", name: "Model with math", skills: { multiply: [3, 4], words: [2, 4] } },
     ],
   },
-  { id: "u4", name: "Unit 4", title: "Multiply by 2-digit numbers", topic: 4, lessons: [
-    L("Multiply by multiples of 10", { mult2: [1, 1], mental: [4, 4] }),
-    L("Estimate products", { mult2: [2, 2] }),
-    L("Arrays, area models and partial products", { mult2: [3, 3] }),
-    L("Multiply 2-digit by 2-digit numbers", { mult2: [3, 4] }),
-    L("Word problems with multiplication", { mult2: [4, 4], words: [3, 4] }),
-  ] },
+  {
+    // Lesson numbers from her Topic 4 homework (read 2026-11-16). mult2 levels 1-7 = lessons 4-1 to 4-7.
+    id: "u4", name: "Unit 4", title: "Multiply by 2-digit numbers", topic: 4,
+    lessons: [
+      { id: "4-1", name: "Multiply multiples of 10", skills: { mult2: [1, 1] } },
+      { id: "4-2", name: "Use models to multiply by multiples of 10", skills: { mult2: [2, 2] } },
+      { id: "4-3", name: "Estimate: rounding or compatible numbers", skills: { mult2: [3, 3] } },
+      { id: "4-4", name: "Arrays and partial products", skills: { mult2: [4, 4] } },
+      { id: "4-5", name: "Area models and partial products", skills: { mult2: [5, 5] } },
+      { id: "4-6", name: "Partial products to multiply 2-digit numbers", skills: { mult2: [6, 6] } },
+      { id: "4-7", name: "Make sense and persevere (multi-step)", skills: { mult2: [7, 7] } },
+    ],
+  },
   { id: "u5", name: "Unit 5", title: "Divide by 1-digit numbers", topic: 5, lessons: [
     L("Mental math: divide tens and hundreds", { divide1: [1, 1] }),
     L("Estimate quotients", { divide1: [2, 2] }),

@@ -526,7 +526,7 @@ export const SKILLS = [
   { id: "properties", name: "Properties", emoji: "🔀", maxLevel: 3, gen: properties },
   { id: "compare", name: "Compare Numbers", emoji: "⚖️", maxLevel: 4, gen: compareNums, topic: 1 },
   { id: "multiply", name: "Multiply by 1 Digit", emoji: "✳️", maxLevel: 5, gen: multiply, topic: 3 },
-  { id: "mult2", name: "Multiply by 2 Digits", emoji: "✴️", maxLevel: 4, gen: mult2, topic: 4 },
+  { id: "mult2", name: "Multiply by 2 Digits", emoji: "✴️", maxLevel: 7, gen: mult2, topic: 4 },
   { id: "divide1", name: "Long Division", emoji: "🍕", maxLevel: 5, gen: divide1, topic: 5 },
   { id: "operations", name: "Times As Many & Multi-Step", emoji: "🧮", maxLevel: 3, gen: operations, topic: 6 },
   { id: "factors", name: "Factors & Multiples", emoji: "🔑", maxLevel: 3, gen: factors, topic: 7 },

@@ -171,6 +171,7 @@ export function Visual({ v }) {
   if (v.kind === "lineplot") return <LinePlot {...v} />;
   if (v.kind === "angle") return <Angle {...v} />;
   if (v.kind === "areaSplit") return <AreaSplit {...v} />;
+  if (v.kind === "areaModel") return <AreaModel {...v} />;
   if (v.kind === "scale") return <Scale {...v} />;
   if (v.kind === "ratio") return <Ratio {...v} />;
   return null;
@@ -187,6 +188,25 @@ function AreaSplit({ rows, cols, splits = [] }) {
       {splits.map((c) => <line key={c} x1={c * s} y1="-4" x2={c * s} y2={H + 4} className="as-cut" />)}
       {edges.slice(1).map((e, i) => <text key={i} x={((e + edges[i]) / 2) * s} y="-7" textAnchor="middle" className="rect-label">{e - edges[i]}</text>)}
       <text x="-8" y={H / 2 + 5} textAnchor="end" className="rect-label">{rows}</text>
+    </svg>
+  );
+}
+// Box area model (not to scale): tens/ones on each side, the partial product or "?" in each box.
+function AreaModel({ rows, cols, cells = [] }) {
+  const cw = (c) => (c >= 10 ? 130 : 70), rh = (r) => (r >= 10 ? 80 : 50);
+  const xs = cols.reduce((acc, c) => [...acc, acc[acc.length - 1] + cw(c)], [0]);
+  const ys = rows.reduce((acc, r) => [...acc, acc[acc.length - 1] + rh(r)], [0]);
+  const W = xs[xs.length - 1], H = ys[ys.length - 1];
+  return (
+    <svg viewBox={`-44 -26 ${W + 52} ${H + 34}`} className="visual" style={{ maxHeight: 240 }} role="img" aria-label={`Area model: ${rows.join(" + ")} by ${cols.join(" + ")}`}>
+      {rows.map((r, i) => cols.map((c, j) => (
+        <g key={`${i}-${j}`}>
+          <rect x={xs[j]} y={ys[i]} width={cw(c)} height={rh(r)} className={(i + j) % 2 ? "as-b" : "as-a"} stroke="var(--ink)" strokeWidth="2" />
+          <text x={xs[j] + cw(c) / 2} y={ys[i] + rh(r) / 2 + 6} textAnchor="middle" className="rect-label">{cells[i]?.[j] == null ? "?" : Number(cells[i][j]).toLocaleString("en-US")}</text>
+        </g>
+      )))}
+      {cols.map((c, j) => <text key={`c${j}`} x={xs[j] + cw(c) / 2} y="-8" textAnchor="middle" className="rect-label">{c}</text>)}
+      {rows.map((r, i) => <text key={`r${i}`} x="-8" y={ys[i] + rh(r) / 2 + 5} textAnchor="end" className="rect-label">{r}</text>)}
     </svg>
   );
 }

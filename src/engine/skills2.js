@@ -14,30 +14,143 @@ const cmp = (a, b) => (a < b ? "<" : a > b ? ">" : "=");
 const blankFrac = (pre, den) => ({ pre, label: "?", post: `/${den}` });
 
 // ── Topic 4: multiply by 2-digit numbers ────────────────────────────────────
-export function mult2(level) {
+// Levels follow the school lessons 4-1 to 4-7 (Savvas enVision Grade 4, Topic 4).
+const splitTO = (n) => [n - (n % 10), n % 10];
+// Box area model (not to scale): side labels and the product (or "?") in each box.
+const areaModel = (a, b, hide = true) => {
+  const rows = splitTO(a).filter(Boolean), cols = splitTO(b).filter(Boolean);
+  return { kind: "areaModel", rows, cols, cells: rows.map((r) => cols.map((c) => (hide ? null : r * c))) };
+};
+const partialsOf = (a, b) => {
+  const [at, ao] = splitTO(a), [bt, bo] = splitTO(b);
+  return [[at, bt], [at, bo], [ao, bt], [ao, bo]].filter(([x, y]) => x && y);
+};
+// Nearest "friendly" number (multiple of 25 or 10) for compatible-number estimates.
+const friendly = (n) => {
+  const opts = [roundTo(n, 10), roundTo(n, 25)].filter((v) => v > 0);
+  return opts.sort((x, y) => Math.abs(x - n) - Math.abs(y - n))[0];
+};
+
+export function mult2(level, theme) {
+  const t = who(theme);
   if (level === 1) {
-    const a = rand(2, 9) * 10, b = chance(0.5) ? rand(2, 9) * 10 : rand(11, 49);
-    const ans = a * b;
-    return { text: `${a} × ${b} = ?`, answerType: "number", answer: num(ans), wrong: cleanWrong(ans, [ans / 10, ans * 10, (a / 10) * b]), hint: `Multiply without the zero, then put the zero back: ${a / 10} × ${b}, then × 10.`, steps: [`${a / 10} × ${b} = ${fmt((a / 10) * b)}`, `× 10 = ${fmt(ans)}`], mental: true };
+    // 4-1: multiply multiples of 10 (tens × tens), or find the missing factor.
+    const x = rand(2, 9), y = rand(1, 9), a = x * 10, b = y * 10, ans = a * b;
+    if (chance(0.4)) {
+      const left = chance(0.7);
+      return { text: left ? `${a} × ? = ${fmt(ans)}` : `? × ${a} = ${fmt(ans)}`, answerType: "number", answer: num(b), wrong: cleanWrong(b, [y, b * 10, b + 10]), misconceptions: { [y]: "placeValue", [b * 10]: "placeValue" }, hint: `${fmt(ans)} is ${fmt(ans / 100)} hundreds. ${x} tens times how many tens makes ${fmt(ans / 100)} hundreds?`, steps: [`${x} × ${y} = ${x * y}`, `${x} tens × ${y} tens = ${x * y} hundreds = ${fmt(ans)}`, `So the missing factor is ${b}`], mental: true };
+    }
+    const zeroTrap = (x * y) % 10 === 0; // like 50 × 60 = 3,000: the fact already ends in 0
+    return { text: `${a} × ${b} = ?`, answerType: "number", answer: num(ans), wrong: cleanWrong(ans, [ans / 10, ans * 10, x * y]), misconceptions: { [ans / 10]: "placeValue", [ans * 10]: "placeValue", [x * y]: "placeValue" }, hint: zeroTrap ? `${x} × ${y} = ${x * y}. That already ends in a zero, and you still need 2 more zeros for the two tens.` : `Use the fact ${x} × ${y}, then think: tens × tens = hundreds.`, steps: [`${x} × ${y} = ${x * y}`, `${x} tens × ${y} tens = ${x * y} hundreds`, `= ${fmt(ans)}`], mental: true, story: (th) => `${who(th).hero} buys ${b} boxes of ${who(th).things}. Each box holds ${a}. How many ${who(th).things} in all?` };
   }
   if (level === 2) {
-    const a = rand(12, 98), b = rand(12, 98);
-    const ra = roundTo(a, 10), rb = roundTo(b, 10), ans = ra * rb;
-    return { text: `Estimate ${a} × ${b} by rounding each number to the nearest ten.`, answerType: "number", answer: num(ans), wrong: cleanWrong(ans, [a * b, (ra + 10) * rb, ra * (rb - 10)]), hint: "Round both numbers first, then multiply the tens.", steps: [`${a} → ${ra}, ${b} → ${rb}`, `${ra} × ${rb} = ${fmt(ans)}`] };
+    // 4-2: a multiple of 10 times a 2-digit number, with an area model.
+    const a = rand(1, 9) * 10, b = rand(11, 49) + (chance(0.3) ? 40 : 0), [bt, bo] = splitTO(b);
+    if (!bo) return mult2(2, theme);
+    const p1 = a * bt, p2 = a * bo, ans = a * b;
+    const base = { hint: `${a} × ${b} means ${a} groups of ${bt} plus ${a} groups of ${bo}.`, steps: [`${a} × ${bt} = ${fmt(p1)}`, `${a} × ${bo} = ${fmt(p2)}`, `${fmt(p1)} + ${fmt(p2)} = ${fmt(ans)}`], visual: { kind: "areaModel", rows: [a], cols: [bt, bo], cells: [[null, null]] }, showVisual: true };
+    if (chance(0.55)) return { ...base, text: `Use the area model to find ${a} × ${b}.`, answerType: "blanks", template: [{ pre: `${a} × ${bt} = `, label: "?", post: "" }, { pre: `${a} × ${bo} = `, label: "?", post: "" }, { pre: `${a} × ${b} = `, label: "?", post: "" }], answer: [num(p1), num(p2), num(ans)] };
+    return { ...base, text: `${a} × ${b} = ?`, answerType: "number", answer: num(ans), wrong: cleanWrong(ans, [p1 + bo, ans / 10, p1, (a / 10) * b]), misconceptions: { [p1 + bo]: "partialProducts", [(a / 10) * b]: "placeValue" }, story: (th) => `A building has ${a} floors. Each floor is ${b} feet tall. How tall is the building in feet?` };
   }
-  const a = rand(12, 98), b = rand(12, 98);
-  const at = a - (a % 10), ao = a % 10, bt = b - (b % 10), bo = b % 10;
-  const parts = [[at, bt], [at, bo], [ao, bt], [ao, bo]].filter(([x, y]) => x && y);
-  const prods = parts.map(([x, y]) => x * y), ans = a * b;
-  const base = {
-    hint: `Break both numbers into tens and ones: ${a} = ${at} + ${ao}, ${b} = ${bt} + ${bo}. Multiply each pair, then add.`,
-    steps: [...parts.map(([x, y], i) => `${x} × ${y} = ${fmt(prods[i])}`), `${prods.map(fmt).join(" + ")} = ${fmt(ans)}`],
-  };
-  if (level === 3 && parts.length >= 3) {
-    return { ...base, text: `Use partial products to find ${a} × ${b}.`, answerType: "blanks", template: [...parts.map(([x, y]) => ({ pre: `${x} × ${y} = `, label: "?", post: "" })), { pre: "Total = ", label: "?", post: "" }], answer: [...prods.map(num), num(ans)] };
+  if (level === 3) {
+    // 4-3: estimate with rounding or compatible numbers.
+    const kind = pick(["round", "compat", "compat", "overunder"]);
+    if (kind === "round") {
+      const a = rand(12, 98), b = rand(12, 98), ra = roundTo(a, 10), rb = roundTo(b, 10), ans = ra * rb;
+      if (a % 10 === 0 || b % 10 === 0) return mult2(3, theme);
+      return { text: `Estimate ${a} × ${b} by rounding each number to the nearest ten.`, answerType: "number", answer: num(ans), wrong: cleanWrong(ans, [a * b, (ra + 10) * rb, ra * (rb - 10)]), misconceptions: { [a * b]: "notRounded" }, hint: "Round both numbers first, then multiply the tens.", steps: [`${a} → ${ra}, ${b} → ${rb}`, `${ra} × ${rb} = ${fmt(ans)}`] };
+    }
+    if (kind === "compat") {
+      // One factor sits near 25 or 75 so a compatible pair beats plain rounding.
+      const a = pick([23, 24, 26, 27, 48, 49, 51, 52, 73, 74, 76, 77]), b = rand(3, 9) * 10 + pick([-2, -1, 1, 2]);
+      const ca = friendly(a), cb = roundTo(b, 10), est = ca * cb;
+      const right = `${ca} × ${cb}`;
+      const cands = [right, `${ca} × ${cb + 10}`, `${ca + 25} × ${cb}`, `${a} × ${cb}`, `${ca} × ${cb - 10}`].filter((c, i, arr) => arr.indexOf(c) === i);
+      const choices = shuffle([right, ...shuffle(cands.slice(1)).slice(0, 2)]);
+      if (chance(0.5)) return { text: `Which compatible numbers are best for estimating ${a} × ${b}?`, answerType: "choice", answer: right, choices, hint: `Compatible numbers are close to the real numbers and easy to multiply in your head. ${a} is close to ${ca}.`, steps: [`${a} is close to ${ca}`, `${b} is close to ${cb}`, `${right} = ${fmt(est)}`] };
+      return { text: `Estimate ${a} × ${b} with compatible numbers.\n${a} is close to ${ca}. ${b} is close to ${cb}.`, answerType: "number", answer: num(est), wrong: cleanWrong(est, [a * b, est * 10, est / 10]), misconceptions: { [est * 10]: "placeValue", [est / 10]: "placeValue", [a * b]: "notRounded" }, hint: ca % 25 === 0 ? `${ca} is a quarter-friendly number: 4 × 25 = 100.` : `Multiply the friendly numbers in your head.`, steps: [`${a} → ${ca}, ${b} → ${cb}`, `${ca} × ${cb} = ${fmt(est)}`], story: (th) => `About ${a} people ride a train each trip. It makes ${b} trips. About how many riders is that? (${a} is close to ${ca}, ${b} is close to ${cb}.)` };
+    }
+    // Is the estimate greater or less than the exact product?
+    let a, b;
+    do { a = rand(12, 98); b = rand(12, 98); } while (a % 10 === 0 || b % 10 === 0 || (a % 10 < 5) !== (b % 10 < 5));
+    const ra = roundTo(a, 10), rb = roundTo(b, 10), up = ra > a;
+    const ans = up ? "greater than" : "less than";
+    return { text: `Nathan estimates ${a} × ${b} by finding ${ra} × ${rb}.\nWill his estimate be greater than or less than the real product?`, answerType: "choice", answer: ans, choices: ["greater than", "less than"], hint: `Did he round both numbers up, or both down?`, steps: [`${a} → ${ra} and ${b} → ${rb}: both rounded ${up ? "up" : "down"}`, `Bigger factors make a bigger product, so the estimate is ${ans} ${fmt(a * b)}`] };
   }
-  const forgotTens = a * bo + ao * bt; // a common slip: dropping the tens × tens part
-  return { ...base, text: `${a} × ${b} = ?`, answerType: "number", answer: num(ans), wrong: cleanWrong(ans, [forgotTens, ans + 10, ans - 100]), story: (th) => `At ${who(th).place} there are ${b} boxes with ${a} ${who(th).things} in each. How many ${who(th).things} in all?` };
+  // Levels 4–7 use two 2-digit numbers with no zero ones digits.
+  let a, b;
+  do { a = rand(11, 98); b = rand(11, 98); } while (a % 10 === 0 || b % 10 === 0);
+  if (level <= 5 && chance(0.5)) { a = rand(11, 39); b = rand(11, 59); if (a % 10 === 0 || b % 10 === 0) return mult2(level, theme); }
+  const parts = partialsOf(a, b), prods = parts.map(([x, y]) => x * y), ans = a * b;
+  const [at, ao] = splitTO(a), [bt, bo] = splitTO(b);
+  const digitsOnly = (at / 10) * (bt / 10) + (at / 10) * bo + ao * (bt / 10) + ao * bo; // multiplied digits, not values
+  const forgotTens = ans - at * bt;
+  const steps = [...parts.map(([x, y], i) => `${x} × ${y} = ${fmt(prods[i])}`), `${prods.map(fmt).join(" + ")} = ${fmt(ans)}`];
+  const hint = `Break both numbers into tens and ones: ${a} = ${at} + ${ao}, ${b} = ${bt} + ${bo}. Multiply every part by every part, then add.`;
+  if (level === 4) {
+    // 4-4: arrays and the four partial products.
+    return { text: `Find ${a} × ${b} with partial products.`, answerType: "blanks", template: [...parts.map(([x, y]) => ({ pre: `${x} × ${y} = `, label: "?", post: "" })), { pre: "Total = ", label: "?", post: "" }], answer: [...prods.map(num), num(ans)], hint, steps, visual: areaModel(a, b), showVisual: true };
+  }
+  if (level === 5) {
+    // 4-5: area models and the Distributive Property.
+    const kind = pick(["missing", "pick", "ways"]);
+    if (kind === "missing") {
+      const hideIdx = shuffle([0, 1, 2, 3]).slice(0, 2).sort();
+      const v = areaModel(a, b, false);
+      hideIdx.forEach((i) => { v.cells[i >> 1][i & 1] = null; });
+      return { text: `Fill in the missing parts of the area model for ${a} × ${b}, then add.`, answerType: "blanks", template: [...hideIdx.map((i) => ({ pre: `${parts[i][0]} × ${parts[i][1]} = `, label: "?", post: "" })), { pre: `${a} × ${b} = `, label: "?", post: "" }], answer: [...hideIdx.map((i) => num(prods[i])), num(ans)], hint, steps, visual: v, showVisual: true };
+    }
+    if (kind === "pick") {
+      const right = prods.map(fmt).join(", ");
+      const bad = [
+        [(at / 10) * (bt / 10), (at / 10) * bo, ao * (bt / 10), ao * bo], // digits only
+        [at * bt, at * bo, ao * bo], // a part left out
+        [at * bt * 10, at * bo * 10, ao * bt, ao * bo], // too many zeros
+        [at + bt, at * bo, ao * bt, ao * bo],
+      ].map((x) => x.map(fmt).join(", ")).filter((c) => c !== right);
+      const choices = shuffle([right, ...shuffle([...new Set(bad)]).slice(0, 3)]);
+      return { text: `Which list has all the partial products for ${a} × ${b}?`, answerType: "choice", answer: right, choices, hint, steps: [`${a} × ${b} = (${at} + ${ao}) × (${bt} + ${bo})`, ...steps], misconceptions: { [bad[0]]: "partialProducts" } };
+    }
+    // Select all the ways (distributive property). The test checks each expression's value.
+    const ok = [`(${at} × ${b}) + (${ao} × ${b})`, `(${at} × ${bt}) + (${at} × ${bo}) + (${ao} × ${bt}) + (${ao} × ${bo})`, `(${a} × ${bt}) + (${a} × ${bo})`];
+    const near = bo >= 7 ? `${a} × (${bt + 10} − ${10 - bo})` : null;
+    if (near) ok.push(near);
+    const no = [[`(${at} × ${bt}) + (${ao} × ${bo})`, at * bt + ao * bo], [`(${at} × ${ao}) + (${bt} × ${bo})`, at * ao + bt * bo], [`(${at} × ${b}) + ${ao}`, at * b + ao]].filter(([, v]) => v !== ans).map(([e]) => e);
+    const choices = shuffle([...shuffle(ok).slice(0, 2 + (near ? 1 : 0)), ...shuffle(no).slice(0, 2)]);
+    const answer = choices.filter((c) => !no.includes(c));
+    return { text: `${a} × ${b} = n\nSelect all the ways to find n.`, answerType: "multi", choices, answer, hint: `Every part of ${a} has to be multiplied by every part of ${b}. Check each choice: is anything left out?`, steps: [`${a} × ${b} = (${at} + ${ao}) × (${bt} + ${bo})`, ...steps] };
+  }
+  if (level === 6) {
+    // 4-6: partial products to multiply by 2-digit numbers, plus missing factors.
+    if (chance(0.3)) {
+      const left = chance(0.5), other = a, f = b, prod = other * f;
+      const wrongs = shuffle([f + 1, f - 1, f + 10, f - 10, Number(String(f).split("").reverse().join(""))].filter((w) => w !== f && w > 10 && w < 100 && other * w !== prod));
+      const choices = shuffle([f, ...[...new Set(wrongs)].slice(0, 3)].map(num));
+      return { text: left ? `${other} × ? = ${fmt(prod)}` : `? × ${other} = ${fmt(prod)}`, answerType: "choice", answer: num(f), choices, hint: `Try each choice. Check the ones digit first: ${ao} × the ones digit has to end in ${prod % 10}.`, steps: [`${other} × ${f} = ${fmt(prod)}`, `So the missing factor is ${f}`] };
+    }
+    return { text: `${a} × ${b} = ?`, answerType: "number", answer: num(ans), wrong: cleanWrong(ans, [forgotTens, digitsOnly, ans + 10, ans - 100]), misconceptions: { [forgotTens]: "partialProducts", [digitsOnly]: "partialProducts" }, hint: `First estimate: about ${roundTo(a, 10)} × ${roundTo(b, 10)} = ${fmt(roundTo(a, 10) * roundTo(b, 10))}. ${hint}`, steps, story: (th) => `At ${who(th).place} there are ${b} boxes with ${a} ${who(th).things} in each. How many ${who(th).things} in all?` };
+  }
+  // Level 7 (4-7): make sense and persevere with multi-step problems.
+  const [n1, n2] = shuffle(t.names);
+  const kind = pick(["chain", "two", "profit", "more", "after"]);
+  if (kind === "chain") {
+    const g = rand(12, 25), per = rand(11, 19), each = rand(3, 8), mid = g * per, tot = mid * each;
+    return { text: `${n1} fills ${g} baskets with ${per} plants each. Every plant has ${each} flowers. How many flowers in all?`, answerType: "number", answer: num(tot), wrong: cleanWrong(tot, [mid, g * per + each, g * each * 10]), misconceptions: { [mid]: "partWrong" }, hint: `Hidden question first: how many plants are there?`, steps: [`Plants: ${g} × ${per} = ${fmt(mid)}`, `Flowers: ${fmt(mid)} × ${each} = ${fmt(tot)}`] };
+  }
+  if (kind === "two") {
+    const b1 = rand(12, 39), s1 = rand(11, 29), b2 = rand(2, 5) * 10, s2 = rand(12, 35), p1 = b1 * s1, p2 = b2 * s2;
+    return { text: `${n1} orders ${b1} boxes of ${s1} pencils and ${b2} boxes of ${s2} erasers. How many items is that altogether?`, answerType: "number", answer: num(p1 + p2), wrong: cleanWrong(p1 + p2, [p1, p2, (b1 + b2) * (s1 + s2)]), misconceptions: { [p1]: "partWrong", [p2]: "partWrong" }, hint: `Find the pencils and the erasers separately, then add.`, steps: [`Pencils: ${b1} × ${s1} = ${fmt(p1)}`, `Erasers: ${b2} × ${s2} = ${fmt(p2)}`, `${fmt(p1)} + ${fmt(p2)} = ${fmt(p1 + p2)}`] };
+  }
+  if (kind === "profit") {
+    const cost = rand(21, 59), sell = cost + rand(12, 45), n = rand(12, 29), gain = sell - cost, tot = gain * n;
+    return { text: `A store pays $${cost} for each camera and sells it for $${sell}. It sells ${n} cameras. How many dollars does the store earn (selling price minus what it paid)?`, answerType: "number", answer: num(tot), wrong: cleanWrong(tot, [sell * n, cost * n, gain]), misconceptions: { [sell * n]: "partWrong", [gain]: "partWrong" }, hint: `Hidden question first: how much does the store earn on ONE camera?`, steps: [`One camera: $${sell} − $${cost} = $${gain}`, `${n} cameras: ${gain} × ${n} = $${fmt(tot)}`] };
+  }
+  if (kind === "more") {
+    const r1 = rand(3, 7) * 10, r2 = r1 + rand(1, 3) * 10, d = pick([28, 30, 31]), diff = (r2 - r1) * d;
+    return { text: `${n1} reads ${r1} minutes a day. ${n2} reads ${r2} minutes a day. How many more minutes does ${n2} read in a month with ${d} days?`, answerType: "number", answer: num(diff), wrong: cleanWrong(diff, [r2 * d, r2 - r1, r1 * d]), misconceptions: { [r2 * d]: "partWrong", [r2 - r1]: "partWrong" }, hint: `How many more minutes each day? Then multiply by the days.`, steps: [`Each day: ${r2} − ${r1} = ${r2 - r1}`, `${r2 - r1} × ${d} = ${fmt(diff)}`] };
+  }
+  const start = rand(105, 395), box = rand(11, 15), boxes = rand(12, 25), got = box * boxes;
+  return { text: `${n1} has ${start} marbles, then buys ${boxes} more bags with ${box} marbles in each bag. How many marbles does ${n1} have now?`, answerType: "number", answer: num(start + got), wrong: cleanWrong(start + got, [got, start + box + boxes, start * box]), misconceptions: { [got]: "partWrong", [start + box + boxes]: "wrongOperation" }, hint: `First find how many marbles are in the bags.`, steps: [`Bags: ${boxes} × ${box} = ${fmt(got)}`, `${start} + ${fmt(got)} = ${fmt(start + got)}`] };
 }
 
 // ── Topic 5: divide by 1-digit numbers ──────────────────────────────────────
