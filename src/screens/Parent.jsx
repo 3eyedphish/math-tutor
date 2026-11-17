@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { FocusPanel } from "../mission/oceangames.jsx";
 import { SKILLS, SKILL } from "../engine/skills.js";
 import { APPROACHES } from "../engine/approaches.js";
 import { approachScores, mastery, factKey, freshState } from "../engine/learner.js";
@@ -61,7 +62,7 @@ export default function Parent({ profile, state, persist, onClose, onProfileChan
   return (
     <div className="card wide">
       <div className="row between"><h2>{profile.avatar} {profile.name}: grown-up view</h2><button className="ghost small" onClick={onClose}>Done</button></div>
-      <div className="tabs">{["study", "progress", "misses", "styles", "facts", "settings"].map((t) => <button key={t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>{{ study: "Study mode", progress: "Skills", styles: "Teaching styles", misses: "Mistakes", facts: "Times tables", settings: "Settings" }[t]}</button>)}</div>
+      <div className="tabs">{["study", "progress", "misses", "styles", "facts", "focus", "settings"].map((t) => <button key={t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>{{ study: "Study mode", progress: "Skills", styles: "Teaching styles", misses: "Mistakes", facts: "Times tables", focus: "Focus skills", settings: "Settings" }[t]}</button>)}</div>
 
       {tab === "progress" && (
         <table className="ptable">
@@ -92,6 +93,7 @@ export default function Parent({ profile, state, persist, onClose, onProfileChan
       )}
       {tab === "study" && <StudyPlan state={state} persist={(s) => { persist(s); force((x) => x + 1); }} />}
       {tab === "misses" && <Mistakes state={state} />}
+      {tab === "focus" && <div className="ms-root ms-inline"><FocusPanel st={state} /></div>}
       {tab === "facts" && <><FactGrid facts={state.facts} /><GymPanel state={state} persist={(s) => { persist(s); force((x) => x + 1); }} /></>}
       {tab === "settings" && (
         <div className="settings">

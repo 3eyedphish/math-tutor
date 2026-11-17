@@ -18,7 +18,7 @@ const res = await build({
   nodePaths: process.env.NODE_PATH ? process.env.NODE_PATH.split(":") : [],
 });
 const js = res.outputFiles[0].text.replace(/<\/script/gi, "<\\/script");
-const css = readFileSync(join(root, "src/styles.css"), "utf8");
+const css = readFileSync(join(root, "src/styles.css"), "utf8") + "\n" + readFileSync(join(root, "src/mission/mission.css"), "utf8");
 const html = readFileSync(join(root, "public/index.template.html"), "utf8").replace("/*CSS*/", () => css).replace("/*JS*/", () => js);
 writeFileSync(join(out, "index.html"), html);
 cpSync(join(root, "public/manifest.webmanifest"), join(out, "manifest.webmanifest"));
