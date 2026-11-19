@@ -35,6 +35,8 @@ export function ensureSpell(st) {
   const sp = st.spell;
   sp.lists ||= []; sp.words ||= {}; sp.log ||= [];
   if (!sp.lists.length) { sp.lists.push(SEED_LIST); sp.activeId = SEED_LIST.id; }
+  // Lists saved before the Unit 4 story existed get it now (replacing a stand-in story).
+  for (const l of sp.lists) if (l.id === SEED_LIST.id && l.story !== SEED_LIST.story) l.story = SEED_LIST.story;
   if (!sp.lists.find((l) => l.id === sp.activeId)) sp.activeId = sp.lists[sp.lists.length - 1].id;
   return sp;
 }

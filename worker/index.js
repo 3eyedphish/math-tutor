@@ -111,6 +111,28 @@ async function api(request, env, url) {
     const d = await res.json();
     return json({ text: d.content?.[0]?.text?.trim() || "" });
   }
+  // Natural-sounding speech for the spelling words (Workers AI, Deepgram Aura). Each text is cached,
+  // so a week's list costs a few cents at most; capped per day like the Claude calls.
+  if (parts[0] === "tts" && method === "POST") {
+    const text = String(body.text || "").trim().slice(0, 600);
+    if (!text || !env.AI) return json({ error: "no tts" }, 503);
+    const voice = ["asteria", "luna", "athena", "hera", "stella", "orion", "arcas"].includes(body.voice) ? body.voice : "asteria";
+    const hash = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(voice + "|" + text)))].map((b) => b.toString(16).padStart(2, "0")).join("");
+    const key = new Request(`https://${url.hostname}/__tts/${hash}`);
+    const cache = typeof caches !== "undefined" ? caches.default : null;
+    const hit = cache ? await cache.match(key).catch(() => null) : null;
+    if (hit) return hit;
+    const day = "tts-" + new Date().toISOString().slice(0, 10);
+    const used = await db.prepare("INSERT INTO ai_usage (day, calls) VALUES (?, 1) ON CONFLICT(day) DO UPDATE SET calls = calls + 1 RETURNING calls").bind(day).first();
+    if ((used?.calls || 0) > Number(env.TTS_DAILY_LIMIT || 1500)) return json({ error: "limit" }, 429);
+    try {
+      const res = await env.AI.run("@cf/deepgram/aura-1", { text, speaker: voice, encoding: "mp3" }, { returnRawResponse: true });
+      if (!res.ok) return json({ error: "tts failed" }, 502);
+      const out = new Response(await res.arrayBuffer(), { headers: { "content-type": "audio/mpeg", "cache-control": "public, max-age=2592000" } });
+      if (cache) await cache.put(key, out.clone()).catch(() => {});
+      return out;
+    } catch { return json({ error: "tts failed" }, 502); }
+  }
   return json({ error: "not found" }, 404);
 }
 

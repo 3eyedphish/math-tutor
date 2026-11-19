@@ -1,7 +1,7 @@
 // Writing with the spelling words: a sentence for each word, her own story, and a fill-in-the-blank story.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { check, record, practiceOrder, findWords, sentenceTips, parseStory, storyFits, sentenceStory, STORY_PROMPT, ensureSpell, sayText } from "./engine.js";
-import { say } from "./speech.js";
+import { say, sayLong, warm } from "./speech.js";
 import { Particles } from "../ui/components.jsx";
 import * as store from "../engine/store.js";
 
@@ -121,7 +121,7 @@ export function MyStory({ state, list, persist, profile, onDone }) {
       <p className="sub center">You used <b>{done.used.length}</b> of {list.words.length} spelling words. +{done.used.length} ⭐</p>
       <div className="sp-story-read">{done.text}</div>
       {done.note && <div className="ai">{done.note}</div>}
-      <div className="controls"><button className="ghost" onClick={() => say(done.text)}>🔊 Read it to me</button><button className="primary" onClick={onDone}>Done</button></div>
+      <div className="controls"><button className="ghost" onClick={() => sayLong(done.text)}>🔊 Read it to me</button><button className="primary" onClick={onDone}>Done</button></div>
     </div>
   );
   const words = text.trim() ? text.trim().split(/\s+/).length : 0;
@@ -136,7 +136,7 @@ export function MyStory({ state, list, persist, profile, onDone }) {
       {coach && <div className="ai">{coach}</div>}
       <div className="controls">
         <button className="ghost" disabled={busy} onClick={helpMe}>💡 Help me keep going</button>
-        <button className="ghost" disabled={!text.trim()} onClick={() => say(text)}>🔊 Read it to me</button>
+        <button className="ghost" disabled={!text.trim()} onClick={() => sayLong(text)}>🔊 Read it to me</button>
         <button className="primary" disabled={busy || words < 10} onClick={finish}>I'm finished!</button>
       </div>
     </div>
@@ -179,7 +179,7 @@ export function FillStory({ state, list, persist, onDone }) {
     setResult(r);
     if (blanks.every((i) => r[i])) { setBurst((b) => b + 1); say("You filled in the whole story!"); }
   };
-  const readAll = () => say(segs.map((s) => s.text ?? s.blank).join(""));
+  const readAll = () => sayLong(segs.map((s) => s.text ?? s.blank).join(""));
   return (
     <div className="card sp">
       <Particles trigger={burst} big />
@@ -192,7 +192,7 @@ export function FillStory({ state, list, persist, onDone }) {
             <input value={vals[i] || ""} disabled={!!result?.[i]} style={{ width: `${Math.max(6, s.blank.length + 2)}ch` }}
               onChange={(e) => { setVals({ ...vals, [i]: e.target.value }); if (result && !result[i]) setResult({ ...result, [i]: undefined }); }}
               autoCorrect="off" autoCapitalize="none" autoComplete="off" spellCheck={false} aria-label="Blank" />
-            <button className="sp-hear" onClick={() => say(`${s.blank}.`)} aria-label="Hear this word">🔊</button>
+            <button type="button" className="sp-hear" onPointerDown={(e) => e.preventDefault()} onMouseDown={(e) => e.preventDefault()} onClick={() => say(`${s.blank}.`)} aria-label="Hear this word">🔊</button>
           </span>))}
       </div>
       {result && !allRight && <div className="sp-tip">The red blanks need another look. Tap 🔊 to hear the word, fix it, and check again.</div>}

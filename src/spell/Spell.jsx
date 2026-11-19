@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { activeList, check, record, practiceOrder, shuffle, requeue, listProgress, wordRec, sayText, ensureSpell } from "./engine.js";
 import { Particles } from "../ui/components.jsx";
 
-import { say } from "./speech.js";
+import { say, warm } from "./speech.js";
 import { Sentences, MyStory, FillStory } from "./Writing.jsx";
 export { say };
 const sayWord = (x, slow) => say(slow ? `${x.w}.` : sayText(x), slow);
@@ -15,6 +15,8 @@ export default function Spell({ profile, state, persist, onClose }) {
   const [mode, setMode] = useState(null); // null | learn | practice | test
   const [only, setOnly] = useState(null);
   const [round, setRound] = useState(0);
+  // Fetch the natural voice for this week's words ahead of time, so every 🔊 plays at once.
+  useEffect(() => { if (list) warm(["Yes!", "You got it this time!", ...list.words.flatMap((x) => [`${x.w}.`, sayText(x), x.s])]); }, [list?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const go = (m, words) => { setOnly(words || null); setRound((r) => r + 1); setMode(m); };
   if (!list || !list.words.length) return (
     <div className="card center"><h1 className="title">Spelling</h1><p className="sub">No words yet. A grown-up can add this week's list in 👪 Grown-ups → Spelling.</p><button className="primary big" onClick={onClose}>Back</button></div>

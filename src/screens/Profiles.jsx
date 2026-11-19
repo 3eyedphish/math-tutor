@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Keypad } from "../ui/components.jsx";
 import * as store from "../engine/store.js";
 
-const AVATARS = ["🦄", "🐉", "🚀", "🐬", "🦊", "🐼", "🦁", "🐸", "🦋", "🐙", "🌟", "🐧"];
+export const AVATARS = ["🦄", "🐉", "🚀", "🐬", "🦊", "🐼", "🦁", "🐸", "🦋", "🐙", "🌟", "🐧", "🐱", "🐶", "🐰", "🐨", "🦖", "🐢", "🦉", "🐝", "🦩", "🐳", "🌈", "🧜‍♀️"];
 
 export default function Profiles({ profiles, onPick, onCreated, mode }) {
   const [adding, setAdding] = useState(profiles.length === 0);

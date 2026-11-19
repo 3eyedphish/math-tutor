@@ -12,6 +12,7 @@ import * as store from "../engine/store.js";
 import { gymState, strongCount, tableStrength, FACT_COUNT, TABLES } from "../gym/engine.js";
 import { MuscleMap } from "../gym/Gym.jsx";
 import SpellPanel from "../spell/SpellPanel.jsx";
+import { AVATARS } from "./Profiles.jsx";
 
 // A multiplication gate keeps kids out of the grown-up area.
 function Gate({ onPass, onCancel }) {
@@ -102,6 +103,8 @@ export default function Parent({ profile, state, persist, onClose, onProfileChan
           <label className="field">Questions per adventure
             <select value={state.sessionLength} onChange={(e) => { state.sessionLength = Number(e.target.value); persist(state); force((x) => x + 1); }}>{[8, 10, 15, 20, 25].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
           <label className="field row"><input type="checkbox" checked={state.timers} onChange={(e) => { state.timers = e.target.checked; persist(state); force((x) => x + 1); }} /> Lightning-round timers</label>
+          <div className="field">{profile.name}'s picture
+            <div className="avatar-grid">{AVATARS.map((a) => <button key={a} className={`avatar ${a === profile.avatar ? "chosen" : ""}`} onClick={async () => onProfileChanged(await store.updateProfile(profile, { avatar: a }))}>{a}</button>)}</div></div>
           <label className="field">Change {profile.name}'s secret code (4 digits, blank = none)
             <div className="row"><input value={pin} inputMode="numeric" onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))} /><button className="ghost small" disabled={pin.length !== 0 && pin.length !== 4} onClick={async () => { onProfileChanged(await store.updateProfile(profile, { pin })); setPin(""); }}>Save</button></div></label>
           {!store.isServer() && (
