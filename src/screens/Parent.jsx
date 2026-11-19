@@ -11,6 +11,7 @@ import { Keypad } from "../ui/components.jsx";
 import * as store from "../engine/store.js";
 import { gymState, strongCount, tableStrength, FACT_COUNT, TABLES } from "../gym/engine.js";
 import { MuscleMap } from "../gym/Gym.jsx";
+import SpellPanel from "../spell/SpellPanel.jsx";
 
 // A multiplication gate keeps kids out of the grown-up area.
 function Gate({ onPass, onCancel }) {
@@ -62,7 +63,7 @@ export default function Parent({ profile, state, persist, onClose, onProfileChan
   return (
     <div className="card wide">
       <div className="row between"><h2>{profile.avatar} {profile.name}: grown-up view</h2><button className="ghost small" onClick={onClose}>Done</button></div>
-      <div className="tabs">{["study", "progress", "misses", "styles", "facts", "focus", "settings"].map((t) => <button key={t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>{{ study: "Study mode", progress: "Skills", styles: "Teaching styles", misses: "Mistakes", facts: "Times tables", focus: "Focus skills", settings: "Settings" }[t]}</button>)}</div>
+      <div className="tabs">{["study", "spelling", "progress", "misses", "styles", "facts", "focus", "settings"].map((t) => <button key={t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>{{ study: "Study mode", spelling: "Spelling", progress: "Skills", styles: "Teaching styles", misses: "Mistakes", facts: "Times tables", focus: "Focus skills", settings: "Settings" }[t]}</button>)}</div>
 
       {tab === "progress" && (
         <table className="ptable">
@@ -92,6 +93,7 @@ export default function Parent({ profile, state, persist, onClose, onProfileChan
         </div>
       )}
       {tab === "study" && <StudyPlan state={state} persist={(s) => { persist(s); force((x) => x + 1); }} />}
+      {tab === "spelling" && <SpellPanel state={state} persist={(s) => { persist(s); force((x) => x + 1); }} />}
       {tab === "misses" && <Mistakes state={state} />}
       {tab === "focus" && <div className="ms-root ms-inline"><FocusPanel st={state} /></div>}
       {tab === "facts" && <><FactGrid facts={state.facts} /><GymPanel state={state} persist={(s) => { persist(s); force((x) => x + 1); }} /></>}
@@ -108,7 +110,7 @@ export default function Parent({ profile, state, persist, onClose, onProfileChan
           )}
           {store.isServer() && <AiCheck />}
           <div className="danger">
-            <button className="ghost small" onClick={() => { if (confirm(`Reset all of ${profile.name}'s progress?`)) { const f = freshState(); Object.keys(state).forEach((k) => delete state[k]); Object.assign(state, f, { name: profile.name }); persist(state); force((x) => x + 1); } }}>Reset progress</button>
+            <button className="ghost small" onClick={() => { if (confirm(`Reset all of ${profile.name}'s progress?`)) { const f = freshState(); const keepLists = state.spell && { lists: state.spell.lists, activeId: state.spell.activeId, words: {}, log: [] }; Object.keys(state).forEach((k) => delete state[k]); Object.assign(state, f, { name: profile.name }); if (keepLists) state.spell = keepLists; persist(state); force((x) => x + 1); } }}>Reset progress</button>
             <button className="ghost small" onClick={async () => { if (confirm(`Delete the player ${profile.name}? This can't be undone.`)) { await store.deleteProfile(profile.id); onProfileDeleted(); } }}>Delete player</button>
           </div>
         </div>
