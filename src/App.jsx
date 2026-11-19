@@ -11,6 +11,7 @@ import Gym from "./gym/Gym.jsx";
 import Lab from "./lab/Lab.jsx";
 import Missions from "./mission/Missions.jsx";
 import Spell from "./spell/Spell.jsx";
+import Focus from "./mission/Focus.jsx";
 import { upgradeState } from "./engine/learner.js";
 
 // An adventure left part-way (within the last 3 days) can be continued.
@@ -75,12 +76,13 @@ export default function App() {
   return (
     <div className="app">
       {screen === "profiles" && <Profiles profiles={profiles} mode={mode} onPick={openProfile} onCreated={async (p) => { setProfiles(await store.listProfiles()); openProfile(p); }} />}
-      {screen === "home" && <Home profile={profile} state={state} onWorld={(id) => { state.worldId = id; persist(state); }} onStart={() => { setResuming(false); setGameKey((k) => k + 1); setScreen("game"); }} resume={canResume(state)} onResume={() => { setResuming(true); setGameKey((k) => k + 1); setScreen("game"); }} onParent={() => setScreen("parent")} onLessons={() => setScreen("lessons")} onGym={() => setScreen("gym")} onLab={() => setScreen("lab")} onMissions={() => setScreen("missions")} onSpell={() => setScreen("spell")} onSwitch={async () => { setProfiles(await store.listProfiles()); setScreen("profiles"); }} />}
+      {screen === "home" && <Home profile={profile} state={state} onWorld={(id) => { state.worldId = id; persist(state); }} onStart={() => { setResuming(false); setGameKey((k) => k + 1); setScreen("game"); }} resume={canResume(state)} onResume={() => { setResuming(true); setGameKey((k) => k + 1); setScreen("game"); }} onParent={() => setScreen("parent")} onLessons={() => setScreen("lessons")} onGym={() => setScreen("gym")} onLab={() => setScreen("lab")} onMissions={() => setScreen("missions")} onSpell={() => setScreen("spell")} onFocus={() => setScreen("focus")} onSwitch={async () => { setProfiles(await store.listProfiles()); setScreen("profiles"); }} />}
       {screen === "game" && <Game key={gameKey} resume={resuming} profile={profile} state={state} world={world} persist={persist} onQuit={() => setScreen("home")} onDone={(r) => { setReport(r); setScreen("report"); }} />}
       {screen === "lessons" && <Lessons state={state} world={world} persist={persist} onClose={() => setScreen("home")} />}
       {screen === "gym" && <Gym profile={profile} state={state} world={world} persist={persist} onClose={() => setScreen("home")} />}
       {screen === "lab" && <Lab profile={profile} state={state} world={world} persist={persist} onClose={() => setScreen("home")} />}
       {screen === "missions" && <Missions profile={profile} state={state} world={world} persist={persist} onClose={() => setScreen("home")} />}
+      {screen === "focus" && <Focus profile={profile} state={state} world={world} persist={persist} onClose={() => setScreen("home")} />}
       {screen === "spell" && <Spell profile={profile} state={state} persist={persist} onClose={() => setScreen("home")} />}
       {screen === "report" && <Report profile={profile} world={world} report={report} onHome={() => setScreen("home")} />}
       {screen === "parent" && <Parent profile={profile} state={state} persist={persist} onClose={() => setScreen("home")} onProfileChanged={(p) => setProfile(p)} onProfileDeleted={async () => { setProfiles(await store.listProfiles()); setProfile(null); setScreen("profiles"); }} />}

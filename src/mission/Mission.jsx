@@ -19,9 +19,10 @@ const reducedMotion = () => { try { return window.matchMedia("(prefers-reduced-m
 
 // A mission: three stations on one ship. Each station is one math idea expressed
 // as an action, and each result goes to the shared learning record.
-export default function Mission({ missionId = "cruiser", st, world, name, persist, onRecord, onExit, ask }) {
+// startView opens one station directly; free unlocks every station and sends "back" to onExit (the Focus hub).
+export default function Mission({ missionId = "cruiser", st, world, name, persist, onRecord, onExit, ask, startView, free }) {
   const M = MISSION[missionId], STATIONS = M.stations;
-  const [view, setView] = useState("intro");
+  const [view, setView] = useState(startView || "intro");
   const [done, setDone] = useState({});
   const [celebrated, setCelebrated] = useState(false);
   const [visit, setVisit] = useState(0); // fresh numbers every time a station opens
@@ -42,6 +43,7 @@ export default function Mission({ missionId = "cruiser", st, world, name, persis
 
   const open = (id) => { sfx.click(); setVisit((v) => v + 1); setView(id); };
   const backToShip = (finishedId) => {
+    if (free) { onExit?.(); return; }
     const nd = finishedId ? { ...done, [finishedId]: true } : done;
     setDone(nd);
     if (STATIONS.every((s) => nd[s.id]) && !celebrated) { setCelebrated(true); setView("finale"); sfx.win(); return; }
@@ -49,7 +51,7 @@ export default function Mission({ missionId = "cruiser", st, world, name, persis
   };
   const toggleSound = () => { const v = !sound; setSound(v); setSnd(v); if (v) sfx.click(); };
   const next = STATIONS.find((s) => !done[s.id]);
-  const unlocked = (i) => i === 0 || done[STATIONS[i - 1].id];
+  const unlocked = (i) => free || i === 0 || done[STATIONS[i - 1].id];
 
   const bar = (
     <div className="ms-bar">

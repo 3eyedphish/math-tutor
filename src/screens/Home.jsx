@@ -1,7 +1,7 @@
 import { WORLDS } from "../engine/themes.js";
 import { activeStudy } from "../engine/units.js";
 
-export default function Home({ profile, state, onWorld, onStart, onParent, onLessons, onGym, onLab, onMissions, onSpell, onSwitch, resume, onResume }) {
+export default function Home({ profile, state, onWorld, onStart, onParent, onLessons, onGym, onLab, onMissions, onSpell, onFocus, onSwitch, resume, onResume }) {
   const world = WORLDS.find((w) => w.id === state.worldId) || WORLDS[0];
   const got = state.stickers[world.id] || 0;
   const study = activeStudy(state);
@@ -12,7 +12,7 @@ export default function Home({ profile, state, onWorld, onStart, onParent, onLes
         <button className="ghost small" onClick={onSwitch}>{profile.avatar} {profile.name} ▾</button>
         <div className="pill">⭐ {state.stars}</div>
       </div>
-      {onSpell ? <div className="subject-tabs"><button className="on">🧮 Math Adventure</button><button className="spell" onClick={onSpell}>🐝 Spelling</button></div> : <h1 className="title">Math Adventure</h1>}
+      {onSpell ? <div className="subject-tabs"><button className="on">🧮 Math</button><button className="spell" onClick={onSpell}>🐝 Spelling</button>{onFocus && <button className="focus" onClick={onFocus}>🧠 Focus</button>}</div> : <h1 className="title">Math Adventure</h1>}
       <p className="sub">Pick your world</p>
       <div className="world-grid">
         {WORLDS.map((w) => (

@@ -559,7 +559,7 @@ export function RouteGame({ st, record, calm, onBack, home }) {
 // ── Grown-ups: what the focus practice shows so far ──
 export function FocusPanel({ st }) {
   const f = st?.focus;
-  if (!f) return <p className="ms-fine"><i>No focus practice yet. Play Deep Sea Rescue to see it here.</i></p>;
+  if (!f) return <p className="ms-fine"><i>No focus practice yet. She can play the focus games from the 🧠 Focus tab at the top of the home screen.</i></p>;
   const m = f.memory, b = f.bubbles, p = f.plans;
   const pct = (a, n) => (n ? `${Math.round((100 * a) / n)}%` : "–");
   return (
