@@ -48,10 +48,10 @@ export async function checkPin(profile, pin) {
   if (!profile.pinHash) return true;
   return (await hashPin(profile.id, pin)) === profile.pinHash;
 }
-export async function createProfile({ name, avatar, pin }) {
+export async function createProfile({ name, avatar, pin, stage }) {
   const id = newId();
   const profile = { id, name, avatar, pinHash: await hashPin(id, pin), createdAt: Date.now() };
-  const state = { ...freshState(), name, updatedAt: Date.now() };
+  const state = { ...freshState(), name, updatedAt: Date.now(), ...(stage === "preschool" ? { stage: "preschool", worldId: "ocean" } : {}) };
   LS.set("mt.profiles", [...LS.get("mt.profiles", []), profile]);
   LS.set(`mt.state.${id}`, state);
   if (mode === "server") { await api("/profiles", { method: "POST", body: profile }); await api(`/profiles/${id}/state`, { method: "PUT", body: { state } }); }

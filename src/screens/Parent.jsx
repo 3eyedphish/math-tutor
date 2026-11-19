@@ -13,6 +13,8 @@ import { gymState, strongCount, tableStrength, FACT_COUNT, TABLES } from "../gym
 import { MuscleMap } from "../gym/Gym.jsx";
 import SpellPanel from "../spell/SpellPanel.jsx";
 import { AVATARS } from "./Profiles.jsx";
+import LittlePanel from "../little/LittlePanel.jsx";
+import { isLittle, setStage } from "../little/engine.js";
 
 // A multiplication gate keeps kids out of the grown-up area.
 function Gate({ onPass, onCancel }) {
@@ -37,7 +39,7 @@ const pct = (x) => `${Math.round(x * 100)}%`;
 
 export default function Parent({ profile, state, persist, onClose, onProfileChanged, onProfileDeleted }) {
   const [ok, setOk] = useState(false);
-  const [tab, setTab] = useState("study");
+  const [tab, setTab] = useState(isLittle(state) ? "little" : "study");
   const [, force] = useState(0);
   const [key, setKey] = useState(store.getLocalKey());
   const [pin, setPin] = useState("");
@@ -64,7 +66,7 @@ export default function Parent({ profile, state, persist, onClose, onProfileChan
   return (
     <div className="card wide">
       <div className="row between"><h2>{profile.avatar} {profile.name}: grown-up view</h2><button className="ghost small" onClick={onClose}>Done</button></div>
-      <div className="tabs">{["study", "spelling", "progress", "misses", "styles", "facts", "focus", "settings"].map((t) => <button key={t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>{{ study: "Study mode", spelling: "Spelling", progress: "Skills", styles: "Teaching styles", misses: "Mistakes", facts: "Times tables", focus: "Focus skills", settings: "Settings" }[t]}</button>)}</div>
+      <div className="tabs">{(isLittle(state) ? ["little", "settings"] : ["study", "spelling", "progress", "misses", "styles", "facts", "focus", "settings"]).map((t) => <button key={t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>{{ little: "Little learner", study: "Study mode", spelling: "Spelling", progress: "Skills", styles: "Teaching styles", misses: "Mistakes", facts: "Times tables", focus: "Focus skills", settings: "Settings" }[t]}</button>)}</div>
 
       {tab === "progress" && (
         <table className="ptable">
@@ -96,10 +98,16 @@ export default function Parent({ profile, state, persist, onClose, onProfileChan
       {tab === "study" && <StudyPlan state={state} persist={(s) => { persist(s); force((x) => x + 1); }} />}
       {tab === "spelling" && <SpellPanel state={state} persist={(s) => { persist(s); force((x) => x + 1); }} />}
       {tab === "misses" && <Mistakes state={state} />}
+      {tab === "little" && <LittlePanel state={state} persist={(s) => { persist(s); force((x) => x + 1); }} />}
       {tab === "focus" && <div className="ms-root ms-inline"><FocusPanel st={state} /></div>}
       {tab === "facts" && <><FactGrid facts={state.facts} /><GymPanel state={state} persist={(s) => { persist(s); force((x) => x + 1); }} /></>}
       {tab === "settings" && (
         <div className="settings">
+          <div className="field">Which games does {profile.name} see?
+            <div className="stage-pick">
+              <button className={!isLittle(state) ? "chosen" : ""} onClick={() => { setStage(state, "big"); persist(state); setTab("settings"); force((x) => x + 1); }}><span>🧮</span><b>Big kid</b><small>Math Adventure, Math Gym, Spelling lists</small></button>
+              <button className={isLittle(state) ? "chosen" : ""} onClick={() => { setStage(state, "preschool"); persist(state); setTab("settings"); force((x) => x + 1); }}><span>🧸</span><b>Little learner</b><small>Ages 3–5: counting, shapes, ABC letters</small></button>
+            </div></div>
           <label className="field">Questions per adventure
             <select value={state.sessionLength} onChange={(e) => { state.sessionLength = Number(e.target.value); persist(state); force((x) => x + 1); }}>{[8, 10, 15, 20, 25].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
           <label className="field row"><input type="checkbox" checked={state.timers} onChange={(e) => { state.timers = e.target.checked; persist(state); force((x) => x + 1); }} /> Lightning-round timers</label>
@@ -113,7 +121,7 @@ export default function Parent({ profile, state, persist, onClose, onProfileChan
           )}
           {store.isServer() && <AiCheck />}
           <div className="danger">
-            <button className="ghost small" onClick={() => { if (confirm(`Reset all of ${profile.name}'s progress?`)) { const f = freshState(); const keepLists = state.spell && { lists: state.spell.lists, activeId: state.spell.activeId, words: {}, log: [] }; Object.keys(state).forEach((k) => delete state[k]); Object.assign(state, f, { name: profile.name }); if (keepLists) state.spell = keepLists; persist(state); force((x) => x + 1); } }}>Reset progress</button>
+            <button className="ghost small" onClick={() => { if (confirm(`Reset all of ${profile.name}'s progress?`)) { const f = freshState(); const stage = state.stage; const keepLists = state.spell && { lists: state.spell.lists, activeId: state.spell.activeId, words: {}, log: [] }; Object.keys(state).forEach((k) => delete state[k]); Object.assign(state, f, { name: profile.name }); if (keepLists) state.spell = keepLists; if (stage === "preschool") setStage(state, "preschool"); persist(state); force((x) => x + 1); } }}>Reset progress</button>
             <button className="ghost small" onClick={async () => { if (confirm(`Delete the player ${profile.name}? This can't be undone.`)) { await store.deleteProfile(profile.id); onProfileDeleted(); } }}>Delete player</button>
           </div>
         </div>

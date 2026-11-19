@@ -12,6 +12,8 @@ import Lab from "./lab/Lab.jsx";
 import Missions from "./mission/Missions.jsx";
 import Spell from "./spell/Spell.jsx";
 import Focus from "./mission/Focus.jsx";
+import Little from "./little/Little.jsx";
+import { isLittle } from "./little/engine.js";
 import { upgradeState } from "./engine/learner.js";
 
 // An adventure left part-way (within the last 3 days) can be continued.
@@ -76,7 +78,8 @@ export default function App() {
   return (
     <div className="app">
       {screen === "profiles" && <Profiles profiles={profiles} mode={mode} onPick={openProfile} onCreated={async (p) => { setProfiles(await store.listProfiles()); openProfile(p); }} />}
-      {screen === "home" && <Home profile={profile} state={state} onWorld={(id) => { state.worldId = id; persist(state); }} onStart={() => { setResuming(false); setGameKey((k) => k + 1); setScreen("game"); }} resume={canResume(state)} onResume={() => { setResuming(true); setGameKey((k) => k + 1); setScreen("game"); }} onParent={() => setScreen("parent")} onLessons={() => setScreen("lessons")} onGym={() => setScreen("gym")} onLab={() => setScreen("lab")} onMissions={() => setScreen("missions")} onSpell={() => setScreen("spell")} onFocus={() => setScreen("focus")} onSwitch={async () => { setProfiles(await store.listProfiles()); setScreen("profiles"); }} />}
+      {screen === "home" && isLittle(state) && <Little profile={profile} state={state} persist={persist} onParent={() => setScreen("parent")} onSwitch={async () => { setProfiles(await store.listProfiles()); setScreen("profiles"); }} />}
+      {screen === "home" && !isLittle(state) && <Home profile={profile} state={state} onWorld={(id) => { state.worldId = id; persist(state); }} onStart={() => { setResuming(false); setGameKey((k) => k + 1); setScreen("game"); }} resume={canResume(state)} onResume={() => { setResuming(true); setGameKey((k) => k + 1); setScreen("game"); }} onParent={() => setScreen("parent")} onLessons={() => setScreen("lessons")} onGym={() => setScreen("gym")} onLab={() => setScreen("lab")} onMissions={() => setScreen("missions")} onSpell={() => setScreen("spell")} onFocus={() => setScreen("focus")} onSwitch={async () => { setProfiles(await store.listProfiles()); setScreen("profiles"); }} />}
       {screen === "game" && <Game key={gameKey} resume={resuming} profile={profile} state={state} world={world} persist={persist} onQuit={() => setScreen("home")} onDone={(r) => { setReport(r); setScreen("report"); }} />}
       {screen === "lessons" && <Lessons state={state} world={world} persist={persist} onClose={() => setScreen("home")} />}
       {screen === "gym" && <Gym profile={profile} state={state} world={world} persist={persist} onClose={() => setScreen("home")} />}
