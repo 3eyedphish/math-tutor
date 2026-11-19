@@ -49,4 +49,19 @@ saveList(st, { title: "Unit 5", testDate: "2026-11-27", words: parseList("ghost\
 assert.equal(activeList(st).title, "Unit 5");
 assert.equal(wordRec(st, "ghost").box, 2);
 assert.equal(st.spell.lists.length, 2);
+
+// Writing: finding list words in her writing, near misses, sentence tips, blank stories.
+import { findWords, sentenceTips, parseStory, storyFits, sentenceStory } from "../src/spell/engine.js";
+const u4 = SEED_LIST;
+const f = findWords("On Thanksgiving the merchent hustled to the ships of two companys. A ghost!", u4);
+assert.deepEqual(f.used, ["Thanksgiving", "hustle", "ghost"]);
+assert.deepEqual(f.near.map((n) => n.word), ["merchant", "companies"]);
+assert.deepEqual(findWords("I like ham and the cat sat.", u4), { used: [], near: [] });
+assert.equal(sentenceTips("The ghost floated away.").length, 0);
+assert.equal(sentenceTips("the ghost").length, 3);
+assert.ok(storyFits(u4.story, u4));
+const segs = parseStory("A [[ghost]] and a [[merchant]].");
+assert.deepEqual(segs, [{ text: "A " }, { blank: "ghost" }, { text: " and a " }, { blank: "merchant" }, { text: "." }]);
+assert.ok(storyFits(sentenceStory(u4), u4));
+assert.ok(!storyFits("No blanks here.", u4));
 console.log("spell tests passed");

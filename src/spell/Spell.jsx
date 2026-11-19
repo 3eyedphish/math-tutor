@@ -4,26 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { activeList, check, record, practiceOrder, shuffle, requeue, listProgress, wordRec, sayText, ensureSpell } from "./engine.js";
 import { Particles } from "../ui/components.jsx";
 
-// Speech: a clear US voice, a little slow for spelling. "slow" stretches it further.
-let voice = null;
-function pickVoice() {
-  try {
-    const vs = speechSynthesis.getVoices();
-    const en = vs.filter((v) => /^en[-_]US/i.test(v.lang));
-    voice = en.find((v) => /samantha|ava|allison|google us english|aria|jenny/i.test(v.name)) || en.find((v) => v.localService) || en[0] || vs.find((v) => /^en/i.test(v.lang)) || null;
-  } catch {}
-}
-try { pickVoice(); speechSynthesis.addEventListener?.("voiceschanged", pickVoice); } catch {}
-export function say(text, slow) {
-  try {
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    if (voice) u.voice = voice;
-    u.lang = "en-US";
-    u.rate = slow ? 0.6 : 0.85;
-    speechSynthesis.speak(u);
-  } catch {}
-}
+import { say } from "./speech.js";
+import { Sentences, MyStory, FillStory } from "./Writing.jsx";
+export { say };
 const sayWord = (x, slow) => say(slow ? `${x.w}.` : sayText(x), slow);
 
 export default function Spell({ profile, state, persist, onClose }) {
@@ -39,13 +22,16 @@ export default function Spell({ profile, state, persist, onClose }) {
   const words = only ? only.map((w) => list.words.find((x) => x.w === w)).filter(Boolean) : list.words;
   if (mode === "learn") return <Learn key={round} words={words} onDone={() => setMode(null)} />;
   if (mode === "practice") return <Practice key={round} state={state} list={list} words={words} persist={persist} onDone={() => setMode(null)} />;
+  if (mode === "sentence") return <Sentences key={round} words={words} state={state} list={list} persist={persist} onDone={() => setMode(null)} />;
+  if (mode === "story") return <MyStory key={round} state={state} list={list} profile={profile} persist={persist} onDone={() => setMode(null)} />;
+  if (mode === "fill") return <FillStory key={round} state={state} list={list} persist={persist} onDone={() => setMode(null)} />;
   if (mode === "test") return <Test key={round} state={state} words={list.words} persist={persist} onDone={() => setMode(null)} onPractice={(missed) => go("practice", missed)} />;
 
   const prog = listProgress(state, list);
   const when = list.testDate ? new Date(list.testDate + "T12:00").toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" }) : "";
   return (
     <div className="card sp">
-      <div className="row between"><button className="ghost small" onClick={onClose}>← Home</button><div className="pill">⭐ {state.stars}</div></div>
+      <div className="row between"><button className="ghost small" onClick={onClose}>🧮 Math</button><div className="pill">⭐ {state.stars}</div></div>
       <h1 className="title">🐝 Spelling</h1>
       <p className="sub">{list.title}{when ? ` · test ${when}` : ""} · {list.words.length} words</p>
       <div className="sp-progress"><div style={{ width: `${(prog.known / prog.total) * 100}%` }} /></div>
@@ -54,6 +40,12 @@ export default function Spell({ profile, state, persist, onClose }) {
         <button className="sp-mode" onClick={() => { say(sayText(list.words[0])); go("learn"); }}><span>📖</span><b>Learn the words</b><small>Look, say, cover, write, check</small></button>
         <button className="sp-mode" onClick={() => { const o = practiceOrder(state, list); say(sayText(o[0])); go("practice", o.map((x) => x.w)); }}><span>✏️</span><b>Practice</b><small>Hear it, spell it. Misses come back.</small></button>
         <button className="sp-mode" onClick={() => go("test")}><span>📝</span><b>Practice test</b><small>Just like Friday</small></button>
+      </div>
+      <p className="sp-group">Write with your words</p>
+      <div className="sp-modes">
+        <button className="sp-mode" onClick={() => { const o = practiceOrder(state, list); say(sayText(o[0])); go("sentence", o.map((x) => x.w)); }}><span>✍️</span><b>Write a sentence</b><small>Your own sentence for each word</small></button>
+        <button className="sp-mode" onClick={() => go("fill")}><span>🧩</span><b>Fill in the story</b><small>Which word fits each blank?</small></button>
+        <button className="sp-mode" onClick={() => go("story")}><span>📚</span><b>My story</b><small>Write a story with your words</small></button>
       </div>
       <WordChips state={state} list={list} />
     </div>

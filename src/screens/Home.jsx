@@ -12,7 +12,7 @@ export default function Home({ profile, state, onWorld, onStart, onParent, onLes
         <button className="ghost small" onClick={onSwitch}>{profile.avatar} {profile.name} ▾</button>
         <div className="pill">⭐ {state.stars}</div>
       </div>
-      <h1 className="title">Math Adventure</h1>
+      {onSpell ? <div className="subject-tabs"><button className="on">🧮 Math Adventure</button><button className="spell" onClick={onSpell}>🐝 Spelling</button></div> : <h1 className="title">Math Adventure</h1>}
       <p className="sub">Pick your world</p>
       <div className="world-grid">
         {WORLDS.map((w) => (
@@ -26,7 +26,7 @@ export default function Home({ profile, state, onWorld, onStart, onParent, onLes
       {study && <div className="study-banner">🎒 Studying for: <b>{study.label || `${study.unitName} test`}</b>{when ? ` · ${when}` : ""}<div className="fine">{study.unitTitle}</div></div>}
       {resume && <button className="primary big" onClick={onResume}>Keep going: question {resume.qIndex + 1} of {resume.total} {world.emoji}</button>}
       <button className={resume ? "ghost big" : "primary big"} onClick={onStart}>{resume ? "Start a new adventure" : study ? `Start study adventure ${world.emoji}` : `Start adventure ${world.emoji}`}</button>
-      <div className="row home-links"><button className="ghost lessons-link" onClick={onLessons}>📚 Lessons</button><button className="ghost lessons-link" onClick={onGym}>🏋️ Math Gym</button><button className="ghost lessons-link" onClick={onLab}>🧠 Thinking Lab</button>{onMissions && <button className="ghost lessons-link" onClick={onMissions}>🚀 Missions</button>}{onSpell && <button className="ghost lessons-link" onClick={onSpell}>🐝 Spelling</button>}</div>
+      <div className="row home-links"><button className="ghost lessons-link" onClick={onLessons}>📚 Lessons</button><button className="ghost lessons-link" onClick={onGym}>🏋️ Math Gym</button><button className="ghost lessons-link" onClick={onLab}>🧠 Thinking Lab</button>{onMissions && <button className="ghost lessons-link" onClick={onMissions}>🚀 Missions</button>}</div>
       <button className="ghost small parent-link" onClick={onParent}>👪 Grown-ups</button>
     </div>
   );

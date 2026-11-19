@@ -74,6 +74,9 @@ export default function SpellPanel({ state, persist }) {
             <td>{(r.misses || []).slice(-3).join(", ")}</td></tr>); })}</tbody>
       </table>
       {tests.length > 0 && <p className="fine">Practice tests on this list: {Math.round(tests.length / list.words.length)} · last answers right: {tests.slice(-list.words.length).filter((l) => l.ok).length}/{Math.min(tests.length, list.words.length)}</p>}
+      {(sp.stories || []).length > 0 && <><h3>Her stories</h3>{[...sp.stories].reverse().slice(0, 5).map((st) => (
+        <details key={st.t} className="field"><summary><b>{st.title}</b> · {new Date(st.t).toLocaleDateString()} · {st.used.length} spelling words</summary><p style={{ whiteSpace: "pre-wrap" }}>{st.text}</p></details>))}</>}
+      {(sp.sentences || []).length > 0 && <><h3>Her sentences</h3><ul>{[...sp.sentences].reverse().slice(0, 15).map((x) => <li key={x.t}><b>{x.w}</b>: {x.text}</li>)}</ul></>}
       <p className="fine">A word gets stronger each time she spells it right on the first try and comes back after {BOX_DAYS.slice(1).join(", ")} days. A miss sends it back to the start. Missed words also return a few words later in the same round.</p>
     </div>
   );

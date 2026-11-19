@@ -34,3 +34,23 @@
 .sp-edit textarea { display: block; width: 100%; min-height: 220px; margin-top: 0.35rem; padding: 0.7rem; border-radius: 12px; border: 2px solid var(--line); background: var(--card); color: var(--ink); font: inherit; font-size: 0.95rem; line-height: 1.5; }
 .sp-tip { margin: 0.5rem auto; padding: 0.6rem 0.9rem; border-radius: 14px; background: #fff6d8; color: #6b4e00; font-weight: 600; text-align: center; max-width: 560px; }
 :root[data-theme="dark"] .sp-tip { background: #3a3215; color: #ffe9a8; }
+.sp-group { margin: 0.9rem 0 -0.4rem; font-weight: 800; color: var(--ink-2); text-align: center; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.8rem; }
+.sp-write { display: block; width: 100%; font: inherit; font-size: 1.35rem; line-height: 1.5; padding: 0.7rem 0.9rem; margin: 0.6rem 0; border-radius: 16px; border: 3px solid color-mix(in srgb, var(--accent) 45%, var(--line)); background: var(--card); color: var(--ink); resize: vertical; }
+.sp-write.tall { min-height: 260px; }
+.sp-write:focus, .sp-title:focus { outline: none; border-color: var(--accent); }
+.sp-title { display: block; width: 100%; font: inherit; font-size: 1.3rem; font-weight: 800; padding: 0.5rem 0.9rem; border-radius: 14px; border: 2px solid var(--line); background: var(--card); color: var(--ink); margin-top: 0.4rem; }
+.sp-tip.good { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--ink); }
+.sp-flag { margin: 0 0.3rem; color: #e91e63; text-decoration: underline wavy #e91e63; }
+.sp-story { font-size: 1.3rem; line-height: 2.3; margin: 0.8rem 0; }
+.sp-blank { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; vertical-align: baseline; }
+.sp-blank input { font: inherit; font-size: 1.2rem; font-weight: 700; text-align: center; padding: 0.05rem 0.3rem; border: none; border-bottom: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--ink); border-radius: 6px 6px 0 0; }
+.sp-blank input:focus { outline: 2px solid var(--accent); }
+.sp-blank.right input { border-bottom-color: var(--good); background: color-mix(in srgb, var(--good) 15%, transparent); }
+.sp-blank.wrong input { border-bottom-color: #e91e63; background: #ffe3ee; }
+.sp-hear { font-size: 1rem; padding: 0 0.2rem; background: none; border: none; }
+.sp-story-read { white-space: pre-wrap; font-size: 1.2rem; line-height: 1.6; background: var(--chip); padding: 0.9rem 1rem; border-radius: 16px; margin: 0.6rem 0; }
+.subject-tabs { display: flex; gap: 0.6rem; margin: 0.4rem 0 0.2rem; }
+.subject-tabs button { flex: 1; font-size: 1.35rem; font-weight: 800; padding: 0.7rem 0.6rem; border-radius: 18px; border: 3px solid color-mix(in srgb, var(--accent) 35%, transparent); color: var(--accent); background: transparent; }
+.subject-tabs button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.subject-tabs button.spell { border-color: #f5a623; color: #9a5d00; background: #fff4d6; }
+:root[data-theme="dark"] .subject-tabs button.spell { background: #3a3215; color: #ffd36b; }
