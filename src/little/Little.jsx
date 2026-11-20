@@ -208,12 +208,15 @@ function View({ v }) {
 
 // Things to count. Tapping one gives it a number and says the number out loud.
 function Objects({ v }) {
-  const [count, setCount] = useState(0); // how many have been counted so far
-  // Things to count, in reading order (the ones that went away can't be counted).
+  const [order, setOrder] = useState([]); // keys in the order he counted them
   const items = v.groups.flatMap((g, gi) => Array.from({ length: g.n }, (_, k) => ({ key: `${gi}-${k}`, gi, k, gone: g.gone && k >= g.n - g.gone })));
-  const live = items.filter((x) => !x.gone);
-  // A tap anywhere on the picture counts the next one, so small hands don't have to hit each thing exactly.
-  const tap = () => { if (!v.countable || count >= live.length) return; const n = count + 1; setCount(n); say(`${cap(numWord(n))}.`); };
+  // He counts the one he taps, in any order. A tap that misses lands on the nearest thing not counted yet.
+  const tap = (e) => {
+    if (!v.countable) return;
+    const key = pickAt(e, (k) => !order.includes(k));
+    if (!key) return;
+    const n = order.length + 1; setOrder([...order, key]); say(`${cap(numWord(n))}.`);
+  };
   const os = useObjSize(Math.max(...v.groups.map((g) => g.n)), v.groups.length);
   return (
     <div className="lt-objects" style={{ "--os": `${os}px` }} onClick={tap} role={v.countable ? "button" : undefined}>
@@ -222,16 +225,28 @@ function Objects({ v }) {
           {gi > 0 && v.op && <span className="lt-op">{v.op}</span>}
           <div className={`lt-objgroup ${g.isNew ? "new" : ""}`} style={{ "--cols": cols(g.n) }}>
             {items.filter((x) => x.gi === gi).map((x) => {
-              const at = live.findIndex((y) => y.key === x.key);
-              const done = !x.gone && at < count;
-              return <span key={x.key} className={`lt-obj ${x.gone ? "gone" : ""} ${done ? "counted" : ""}`}>{g.e}{done && <i>{at + 1}</i>}</span>;
+              const at = order.indexOf(x.key);
+              return <span key={x.key} data-k={x.gone ? undefined : x.key} className={`lt-obj ${x.gone ? "gone" : ""} ${at >= 0 ? "counted" : ""}`}>{g.e}{at >= 0 && <i>{at + 1}</i>}</span>;
             })}
           </div>
         </div>
       ))}
-      {v.countable && <div className="lt-count-hint">{count ? <button className="lt-mini" onClick={(e) => { e.stopPropagation(); setCount(0); }}>↺ count again</button> : <span>👆 Tap to count</span>}</div>}
+      {v.countable && <div className="lt-count-hint">{order.length ? <button className="lt-mini" onClick={(e) => { e.stopPropagation(); setOrder([]); }}>↺ count again</button> : <span>👆 Tap to count</span>}</div>}
     </div>
   );
+}
+// The thing the tap landed on (if it qualifies), else the nearest one that qualifies.
+function pickAt(e, ok) {
+  const hit = e.target.closest?.("[data-k]");
+  if (hit && ok(hit.dataset.k)) return hit.dataset.k;
+  if (hit) return null; // tapped one that's already done: do nothing
+  let best = null, bd = Infinity;
+  for (const el of e.currentTarget.querySelectorAll("[data-k]")) {
+    if (!ok(el.dataset.k)) continue;
+    const r = el.getBoundingClientRect(), d = (r.left + r.width / 2 - e.clientX) ** 2 + (r.top + r.height / 2 - e.clientY) ** 2;
+    if (d < bd) { bd = d; best = el.dataset.k; }
+  }
+  return best;
 }
 // Objects per row: small groups in one row, 4 as 2×2, up to 6 in rows of 3, then rows of 5 (like a ten-frame).
 const cols = (n) => (n <= 3 ? n : n === 4 ? 2 : n <= 6 ? 3 : 5);
@@ -249,21 +264,28 @@ function useObjSize(n, groups = 1) {
 
 // Tap exactly n things, then ✔.
 function TapSet({ q, shown, onCheck }) {
-  const [on, setOn] = useState(0);
+  const [on, setOn] = useState([]); // the ones he picked, in order
   const total = q.view.total;
-  // Tap anywhere on the picture to add one; the big ➖ takes one back.
-  const add = () => { if (shown || on >= total) return; setOn(on + 1); say(`${cap(numWord(on + 1))}.`); };
-  const less = () => { if (!on) return; setOn(on - 1); say(on - 1 ? `${cap(numWord(on - 1))}.` : "Zero."); };
+  // Tap any one to pick it, tap it again to put it back. A tap that misses picks the nearest free one.
+  const tap = (e) => {
+    if (shown) return;
+    const hit = e.target.closest?.("[data-k]");
+    if (hit && on.includes(hit.dataset.k)) { const nx = on.filter((k) => k !== hit.dataset.k); setOn(nx); say(nx.length ? `${cap(numWord(nx.length))}.` : "Zero."); return; }
+    const key = pickAt(e, (k) => !on.includes(k));
+    if (!key) return;
+    setOn([...on, key]); say(`${cap(numWord(on.length + 1))}.`);
+  };
+  const less = () => { if (!on.length) return; const nx = on.slice(0, -1); setOn(nx); say(nx.length ? `${cap(numWord(nx.length))}.` : "Zero."); };
   const os = useObjSize(total);
   return (
     <>
-      <div className="lt-objects" style={{ "--os": `${os}px` }} onClick={add} role="button"><div className="lt-objgroup" style={{ "--cols": cols(total) }}>
-        {Array.from({ length: total }, (_, k) => <span key={k} className={`lt-obj ${k < on || (shown && k < q.n) ? "picked" : ""}`}>{q.view.e}{k < on && <i>{k + 1}</i>}</span>)}
+      <div className="lt-objects" style={{ "--os": `${os}px` }} onClick={tap} role="button"><div className="lt-objgroup" style={{ "--cols": cols(total) }}>
+        {Array.from({ length: total }, (_, k) => { const key = String(k), at = on.indexOf(key); return <span key={k} data-k={key} className={`lt-obj ${at >= 0 || (shown && !on.length && k < q.n) ? "picked" : ""}`}>{q.view.e}{at >= 0 && <i>{at + 1}</i>}</span>; })}
       </div></div>
       <div className="lt-tapset-row">
-        <button className="lt-less" disabled={!on || shown} onClick={less} aria-label="One less">➖</button>
-        <div className="lt-bignum small">{on}</div>
-        <button className="lt-check" disabled={!on || shown} onClick={() => onCheck(on)} aria-label="Check">✔</button>
+        <button className="lt-less" disabled={!on.length || shown} onClick={less} aria-label="One less">➖</button>
+        <div className="lt-bignum small">{on.length}</div>
+        <button className="lt-check" disabled={!on.length || shown} onClick={() => onCheck(on.length)} aria-label="Check">✔</button>
       </div>
     </>
   );
