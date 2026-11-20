@@ -134,8 +134,8 @@
 .lt-letter { font-size: clamp(5rem, 17vw, 7.5rem); }
 .lt-emoji { font-size: clamp(4rem, 14vw, 6rem); }
 .lt-group { font-size: clamp(2.2rem, 7vw, 3.2rem); }
-.lt-num .lt-dice.small { grid-template-columns: repeat(3, 14px); gap: 4px; padding: 6px; }
-.lt-num .lt-dice.small i { width: 14px; height: 14px; }
+.lt-num .lt-dice.small { grid-template-columns: repeat(3, 16px); gap: 5px; padding: 7px; }
+.lt-num .lt-dice.small i { width: 16px; height: 16px; }
 .lt-choice .lt-dice { grid-template-columns: repeat(3, 30px); }
 .lt-choice .lt-dice i { width: 30px; height: 30px; }
 .lt-choice .lt-frame { grid-template-columns: repeat(5, 22px); }
@@ -167,7 +167,8 @@ html.lt-still .lt-play { min-height: 0; max-height: calc(100dvh - 32px); margin-
 @media (max-height: 700px) {
   .lt-choice { min-height: 96px; padding: 0.4rem; }
   .lt-num { font-size: 4rem; } .lt-letter { font-size: 4.4rem; } .lt-emoji { font-size: 3.6rem; }
-  .lt-num .lt-dice.small { display: none; }
+  .lt-num .lt-dice.small { grid-template-columns: repeat(3, 10px); gap: 3px; padding: 4px; }
+  .lt-num .lt-dice.small i { width: 10px; height: 10px; }
   .lt-hear { width: 60px; height: 60px; font-size: 1.8rem; }
   .lt-check, .lt-less { width: 84px; height: 84px; font-size: 2.4rem; }
   .lt-q { gap: 0.6rem; padding: 0.2rem 0; }
@@ -178,4 +179,9 @@ html.lt-still .lt-play { min-height: 0; max-height: calc(100dvh - 32px); margin-
 @media (max-height: 700px) {
   .lt-meet { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 0.8rem; }
   .lt-picture { font-size: 3.2rem; padding: 0.4rem 0.8rem; }
+}
+@media (max-height: 700px) and (min-width: 600px) {
+  .lt-objects { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+  .lt-objgroup-wrap { flex-direction: row; }
+  .lt-count-hint { flex-basis: 100%; }
 }

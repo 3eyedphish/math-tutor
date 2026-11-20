@@ -8,6 +8,10 @@ import { SUBJECTS, ensureLittle, makeRound, roundLines, finishLesson, isOpen, ne
 const PRAISE = ["Yes!", "Great job!", "You got it!", "Super!", "Wow, well done!", "That's right!"];
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
 const later = (fn, ms) => setTimeout(fn, ms);
+// Buttons react when the finger lifts, even if it slid a little on the way (a plain click is
+// dropped on touch screens when the finger moves, which made answers feel unresponsive).
+// onClick still handles the keyboard (detail 0) so nothing fires twice.
+const tp = (fn) => ({ onPointerUp: (e) => { if (e.button > 0) return; fn(e); }, onClick: (e) => { if (e.detail === 0) fn(e); } });
 
 export default function Little({ profile, state, persist, onSwitch, onParent }) {
   const lt = ensureLittle(state);
@@ -158,9 +162,9 @@ function Play({ lesson, subject, profile, onQuit, onFinish }) {
   return (
     <div className="card lt lt-play" style={{ "--uc": lesson.unit.color }}>
       <div className="row between">
-        <button className="ghost small" onClick={onQuit}>✖</button>
+        <button className="ghost small" {...tp(onQuit)}>✖</button>
         <div className="lt-progress">{round.map((_, k) => <i key={k} className={k < i ? "done" : k === i ? "now" : ""} />)}</div>
-        <button className="lt-hear" onClick={() => say(q.say)} aria-label="Hear it again">🔊</button>
+        <button className="lt-hear" {...tp(() => say(q.say))} aria-label="Hear it again">🔊</button>
       </div>
       <Particles trigger={boom} />
       <div className="lt-q">
@@ -172,7 +176,7 @@ function Play({ lesson, subject, profile, onQuit, onFinish }) {
             <View v={q.view} key={i} />
             <div className={`lt-choices n${q.choices.length} t-${q.choices[0].t}`}>
               {q.choices.map((c, k) => (
-                <button key={k} className={`lt-choice ${wrong.includes(k) ? "wrong" : ""} ${(right || shown) && k === q.answer ? "right" : ""} ${(right || shown) && k !== q.answer ? "fade" : ""}`} onClick={() => choose(c, k)}>
+                <button key={k} className={`lt-choice ${wrong.includes(k) ? "wrong" : ""} ${(right || shown) && k === q.answer ? "right" : ""} ${(right || shown) && k !== q.answer ? "fade" : ""}`} {...tp(() => choose(c, k))}>
                   <Choice c={c} />
                 </button>
               ))}
@@ -184,7 +188,8 @@ function Play({ lesson, subject, profile, onQuit, onFinish }) {
 }
 
 function Choice({ c }) {
-  if (c.t === "num") return <span className="lt-num">{c.v}{c.dots && <Dots n={c.v} small />}</span>;
+  // Numbers 1–6 always show their die face underneath (he likes matching the number to the dots).
+  if (c.t === "num") return <span className="lt-num">{c.v}{c.v >= 1 && c.v <= 6 && <Dots n={c.v} small />}</span>;
   if (c.t === "dots") return <Dots n={c.v} />;
   if (c.t === "group") return <span className="lt-group">{Array.from({ length: c.n }, (_, k) => <span key={k}>{c.e}</span>)}</span>;
   if (c.t === "shape") return <Shape v={c.v} color={c.color} />;
@@ -201,37 +206,52 @@ function View({ v }) {
   if (v.t === "pattern") return <div className="lt-pattern">{v.seq.map((e, k) => <span key={k}>{e}</span>)}<span className="miss">?</span></div>;
   if (v.t === "flash") return <Flash n={v.n} />;
   if (v.t === "shape") return <SideCounter v={v} />;
-  if (v.t === "letter") return <div className={`lt-bigletter ${v.small ? "small" : ""}`} onClick={() => say(`${cap(LETTERS[v.v].say)}.`)}>{v.v}<span>{v.v.toLowerCase()}</span></div>;
-  if (v.t === "emoji") return <button className="lt-picture" onClick={() => say(`${cap(v.word)}.`)}>{v.v}<small>🔊 {v.word}</small></button>;
+  if (v.t === "letter") return <div className={`lt-bigletter ${v.small ? "small" : ""}`} {...tp(() => say(`${cap(LETTERS[v.v].say)}.`))}>{v.v}<span>{v.v.toLowerCase()}</span></div>;
+  if (v.t === "emoji") return <button className="lt-picture" {...tp(() => say(`${cap(v.word)}.`))}>{v.v}<small>🔊 {v.word}</small></button>;
   return null;
 }
 
 // Things to count. Tapping one gives it a number and says the number out loud.
 function Objects({ v }) {
-  const [count, setCount] = useState(0); // how many have been counted so far
-  // Things to count, in reading order (the ones that went away can't be counted).
+  const [order, setOrder] = useState([]); // keys in the order he counted them
   const items = v.groups.flatMap((g, gi) => Array.from({ length: g.n }, (_, k) => ({ key: `${gi}-${k}`, gi, k, gone: g.gone && k >= g.n - g.gone })));
-  const live = items.filter((x) => !x.gone);
-  // A tap anywhere on the picture counts the next one, so small hands don't have to hit each thing exactly.
-  const tap = () => { if (!v.countable || count >= live.length) return; const n = count + 1; setCount(n); say(`${cap(numWord(n))}.`); };
+  // He counts the one he taps, in any order. A tap that misses lands on the nearest thing not counted yet.
+  const tap = (e) => {
+    if (!v.countable) return;
+    const key = pickAt(e, (k) => !order.includes(k));
+    if (!key) return;
+    const n = order.length + 1; setOrder([...order, key]); say(`${cap(numWord(n))}.`);
+  };
   const os = useObjSize(Math.max(...v.groups.map((g) => g.n)), v.groups.length);
   return (
-    <div className="lt-objects" style={{ "--os": `${os}px` }} onClick={tap} role={v.countable ? "button" : undefined}>
+    <div className="lt-objects" style={{ "--os": `${os}px` }} {...tp(tap)} role={v.countable ? "button" : undefined}>
       {v.groups.map((g, gi) => (
         <div key={gi} className="lt-objgroup-wrap">
           {gi > 0 && v.op && <span className="lt-op">{v.op}</span>}
           <div className={`lt-objgroup ${g.isNew ? "new" : ""}`} style={{ "--cols": cols(g.n) }}>
             {items.filter((x) => x.gi === gi).map((x) => {
-              const at = live.findIndex((y) => y.key === x.key);
-              const done = !x.gone && at < count;
-              return <span key={x.key} className={`lt-obj ${x.gone ? "gone" : ""} ${done ? "counted" : ""}`}>{g.e}{done && <i>{at + 1}</i>}</span>;
+              const at = order.indexOf(x.key);
+              return <span key={x.key} data-k={x.gone ? undefined : x.key} className={`lt-obj ${x.gone ? "gone" : ""} ${at >= 0 ? "counted" : ""}`}>{g.e}{at >= 0 && <i>{at + 1}</i>}</span>;
             })}
           </div>
         </div>
       ))}
-      {v.countable && <div className="lt-count-hint">{count ? <button className="lt-mini" onClick={(e) => { e.stopPropagation(); setCount(0); }}>↺ count again</button> : <span>👆 Tap to count</span>}</div>}
+      {v.countable && <div className="lt-count-hint">{order.length ? <button className="lt-mini" {...tp((e) => { e.stopPropagation(); setOrder([]); })}>↺ count again</button> : <span>👆 Tap to count</span>}</div>}
     </div>
   );
+}
+// The thing the tap landed on (if it qualifies), else the nearest one that qualifies.
+function pickAt(e, ok) {
+  const hit = e.target.closest?.("[data-k]");
+  if (hit && ok(hit.dataset.k)) return hit.dataset.k;
+  if (hit) return null; // tapped one that's already done: do nothing
+  let best = null, bd = Infinity;
+  for (const el of e.currentTarget.querySelectorAll("[data-k]")) {
+    if (!ok(el.dataset.k)) continue;
+    const r = el.getBoundingClientRect(), d = (r.left + r.width / 2 - e.clientX) ** 2 + (r.top + r.height / 2 - e.clientY) ** 2;
+    if (d < bd) { bd = d; best = el.dataset.k; }
+  }
+  return best;
 }
 // Objects per row: small groups in one row, 4 as 2×2, up to 6 in rows of 3, then rows of 5 (like a ten-frame).
 const cols = (n) => (n <= 3 ? n : n === 4 ? 2 : n <= 6 ? 3 : 5);
@@ -243,27 +263,34 @@ function useObjSize(n, groups = 1) {
   const avail = Math.min(w, 720) - 32 - 30 - 28, c = cols(n);
   const rows = Math.ceil(n / c) * groups;
   // Leave room for the answers below the picture (matters when the screen is turned sideways).
-  const byH = Math.floor((h * 0.36 - rows * 10 - groups * 40) / rows);
+  const byH = Math.floor((h * 0.33 - rows * 10 - groups * 40) / rows);
   return Math.max(36, Math.min(130, byH, Math.floor((avail - (c - 1) * 10) / c)));
 }
 
 // Tap exactly n things, then ✔.
 function TapSet({ q, shown, onCheck }) {
-  const [on, setOn] = useState(0);
+  const [on, setOn] = useState([]); // the ones he picked, in order
   const total = q.view.total;
-  // Tap anywhere on the picture to add one; the big ➖ takes one back.
-  const add = () => { if (shown || on >= total) return; setOn(on + 1); say(`${cap(numWord(on + 1))}.`); };
-  const less = () => { if (!on) return; setOn(on - 1); say(on - 1 ? `${cap(numWord(on - 1))}.` : "Zero."); };
+  // Tap any one to pick it, tap it again to put it back. A tap that misses picks the nearest free one.
+  const tap = (e) => {
+    if (shown) return;
+    const hit = e.target.closest?.("[data-k]");
+    if (hit && on.includes(hit.dataset.k)) { const nx = on.filter((k) => k !== hit.dataset.k); setOn(nx); say(nx.length ? `${cap(numWord(nx.length))}.` : "Zero."); return; }
+    const key = pickAt(e, (k) => !on.includes(k));
+    if (!key) return;
+    setOn([...on, key]); say(`${cap(numWord(on.length + 1))}.`);
+  };
+  const less = () => { if (!on.length) return; const nx = on.slice(0, -1); setOn(nx); say(nx.length ? `${cap(numWord(nx.length))}.` : "Zero."); };
   const os = useObjSize(total);
   return (
     <>
-      <div className="lt-objects" style={{ "--os": `${os}px` }} onClick={add} role="button"><div className="lt-objgroup" style={{ "--cols": cols(total) }}>
-        {Array.from({ length: total }, (_, k) => <span key={k} className={`lt-obj ${k < on || (shown && k < q.n) ? "picked" : ""}`}>{q.view.e}{k < on && <i>{k + 1}</i>}</span>)}
+      <div className="lt-objects" style={{ "--os": `${os}px` }} {...tp(tap)} role="button"><div className="lt-objgroup" style={{ "--cols": cols(total) }}>
+        {Array.from({ length: total }, (_, k) => { const key = String(k), at = on.indexOf(key); return <span key={k} data-k={key} className={`lt-obj ${at >= 0 || (shown && !on.length && k < q.n) ? "picked" : ""}`}>{q.view.e}{at >= 0 && <i>{at + 1}</i>}</span>; })}
       </div></div>
       <div className="lt-tapset-row">
-        <button className="lt-less" disabled={!on || shown} onClick={less} aria-label="One less">➖</button>
-        <div className="lt-bignum small">{on}</div>
-        <button className="lt-check" disabled={!on || shown} onClick={() => onCheck(on)} aria-label="Check">✔</button>
+        <button className="lt-less" disabled={!on.length || shown} {...tp(less)} aria-label="One less">➖</button>
+        <div className="lt-bignum small">{on.length}</div>
+        <button className="lt-check" disabled={!on.length || shown} {...tp(() => onCheck(on.length))} aria-label="Check">✔</button>
       </div>
     </>
   );
@@ -272,7 +299,7 @@ function TapSet({ q, shown, onCheck }) {
 function Flash({ n }) {
   const [hide, setHide] = useState(false);
   useEffect(() => { const t = later(() => setHide(true), 1800); return () => clearTimeout(t); }, [n]);
-  return <div className="lt-flash">{hide ? <button className="lt-mini" onClick={() => { setHide(false); later(() => setHide(true), 1500); }}>👀 Look again</button> : <Dots n={n} />}</div>;
+  return <div className="lt-flash">{hide ? <button className="lt-mini" {...tp(() => { setHide(false); later(() => setHide(true), 1500); })}>👀 Look again</button> : <Dots n={n} />}</div>;
 }
 
 // Dots like dice for 1–6, ten-frame rows above that.
@@ -300,7 +327,7 @@ function SideCounter({ v }) {
   // A tap anywhere on the shape lights up the next side.
   const next = () => { const k = pts.findIndex((_, i) => !hit.includes(i)); if (k < 0) return; setHit([...hit, k]); say(`${cap(numWord(hit.length + 1))}.`); };
   return (
-    <svg className="lt-shape big" viewBox="-4 -4 108 108" onClick={next}>
+    <svg className="lt-shape big" viewBox="-4 -4 108 108" {...tp(next)}>
       <polygon points={pts.map((p) => p.join(",")).join(" ")} fill={v.color} opacity="0.35" />
       {pts.map((p, k) => { const q = pts[(k + 1) % pts.length]; const at = hit.indexOf(k); return (
         <g key={k} style={{ cursor: "pointer" }}>
@@ -317,9 +344,9 @@ function Meet({ q, onNext }) {
   const x = LETTERS[q.letter];
   return (
     <div className="lt-meet">
-      <button className="lt-bigletter" onClick={() => say(`${cap(x.say)}. ${cap(x.say)} says ${x.snd}.`)}>{q.letter}<span>{q.letter.toLowerCase()}</span></button>
-      <div className="lt-meet-pics">{x.words.map(([w, e]) => <button key={w} className="lt-picture" onClick={() => say(`${cap(w)}.`)}>{e}<small>{w}</small></button>)}</div>
-      <button className="lt-check" onClick={onNext}>➡</button>
+      <button className="lt-bigletter" {...tp(() => say(`${cap(x.say)}. ${cap(x.say)} says ${x.snd}.`))}>{q.letter}<span>{q.letter.toLowerCase()}</span></button>
+      <div className="lt-meet-pics">{x.words.map(([w, e]) => <button key={w} className="lt-picture" {...tp(() => say(`${cap(w)}.`))}>{e}<small>{w}</small></button>)}</div>
+      <button className="lt-check" {...tp(onNext)}>➡</button>
     </div>
   );
 }
@@ -340,7 +367,7 @@ function NameSpell({ q, onDone }) {
   return (
     <div className="lt-name">
       <div className="lt-slots">{q.letters.map((L, k) => <span key={k} className={k < got ? "on" : k === got ? "now" : ""}>{k < got ? L : ""}</span>)}</div>
-      <div className="lt-choices t-letter">{q.tiles.map((t) => <button key={t.i} className={`lt-choice ${used.includes(t.i) ? "fade" : ""} ${bad === t.i ? "wrong" : ""}`} onClick={() => tap(t)}><span className="lt-letter">{t.v}</span></button>)}</div>
+      <div className="lt-choices t-letter">{q.tiles.map((t) => <button key={t.i} className={`lt-choice ${used.includes(t.i) ? "fade" : ""} ${bad === t.i ? "wrong" : ""}`} {...tp(() => tap(t))}><span className="lt-letter">{t.v}</span></button>)}</div>
     </div>
   );
 }
@@ -389,7 +416,7 @@ function Trace({ glyph, onDone }) {
         onPointerUp={() => { st.current.drawing = false; st.current.last = null; }}
         onPointerCancel={() => { st.current.drawing = false; }} />
       <div className="lt-trace-bar"><div style={{ width: `${Math.min(100, (pct / 0.72) * 100)}%` }} /></div>
-      <div className="row center-row"><button className="lt-mini" onClick={draw}>↺ start over</button>{pct > 0.45 && !st.current.done && <button className="lt-mini" onClick={() => { st.current.done = true; onDone(); }}>✔ done</button>}</div>
+      <div className="row center-row"><button className="lt-mini" {...tp(draw)}>↺ start over</button>{pct > 0.45 && !st.current.done && <button className="lt-mini" {...tp(() => { st.current.done = true; onDone(); })}>✔ done</button>}</div>
     </div>
   );
 }
