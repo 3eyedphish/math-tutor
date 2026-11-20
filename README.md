@@ -54,11 +54,22 @@ It is stored only in Cloudflare, never in the app. `AI_DAILY_LIMIT` in `wrangler
 
 ### 3. Deploy
 
+**Normally you do nothing: merging a pull request into `main` publishes the site.** The `mathtutor` Worker is connected to this GitHub repo with Cloudflare Workers Builds (Worker → Settings → Builds). On every push to `main` Cloudflare runs:
+
+- Build command: `npm test && npm run build` (a failing test stops the deploy, and the live site stays as it was)
+- Deploy command: `npx wrangler deploy`
+
+The build result shows as a check on the commit in GitHub and under the Worker's **Deployments** tab. The `ANTHROPIC_API_KEY` secret stays in Cloudflare and is kept across deploys. Pull requests also run the tests in GitHub Actions (`.github/workflows/test.yml`).
+
+To roll back, open the Worker's **Deployments** tab in Cloudflare and pick an earlier version, or revert the PR on GitHub.
+
+Deploying by hand still works if you ever need it:
+
 ```
 npm run deploy
 ```
 
-This builds the app and publishes it, and attaches `mathtutor.friedmann.vip` to the Worker. Re-run it any time the code changes.
+This builds the app and publishes it, and attaches `mathtutor.friedmann.vip` to the Worker.
 
 ## On the iPad
 
