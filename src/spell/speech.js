@@ -1,85 +1,72 @@
-// Speech for spelling. On the live site the words are spoken by a natural voice (Workers AI,
-// via /api/tts) and cached on the device; the browser's built-in voice is the fallback.
-import { isServer } from "../engine/store.js";
+// Speech for spelling and the little learner. Uses the device's own voices (free, works offline).
+// It picks the most natural English voice the device has: Allison (Enhanced) first, then any
+// Enhanced / Premium / neural voice, then the plain defaults. On an iPad, better voices are
+// downloaded in Settings → Accessibility → Spoken Content → Voices → English.
 
-// ---- Built-in browser voice (fallback): prefer the better-sounding voices when present ----
 let voice = null;
+export function scoreVoice(v) {
+  const name = v.name || "";
+  const lang = String(v.lang || "").replace("_", "-");
+  if (!/^en(-|$)/i.test(lang)) return -1;
+  const better = /enhanced|premium|neural|natural/i.test(name);
+  let s = 0;
+  if (/allison/i.test(name)) s += better ? 100 : 20;
+  if (better) s += 50;
+  if (/ava|samantha|aria|jenny|zoe|evan|nathan|google us english/i.test(name)) s += 5;
+  if (/^en-US$/i.test(lang)) s += 3;
+  if (/novelty|whisper|bells|bad news|good news|jester|organ|bubbles|cellos|trinoids|zarvox|boing|wobble|albert|fred|junior|ralph|kathy|superstar|grandma|grandpa|rocko|shelley|eddy|flo|reed|sandy/i.test(name)) s -= 40;
+  if (v.localService) s += 1;
+  return s;
+}
+export function bestVoice(voices) {
+  return voices.map((v) => [scoreVoice(v), v]).filter(([s]) => s >= 0).sort((a, b) => b[0] - a[0])[0]?.[1] || null;
+}
 function pickVoice() {
-  try {
-    const vs = speechSynthesis.getVoices().filter((v) => /^en[-_]US/i.test(v.lang));
-    const score = (v) => (/premium|enhanced|natural|neural/i.test(v.name) ? 10 : 0) + (/samantha|ava|allison|aria|jenny|google us english/i.test(v.name) ? 5 : 0) + (v.localService ? 1 : 0);
-    voice = vs.sort((a, b) => score(b) - score(a))[0] || null;
-  } catch {}
+  try { voice = bestVoice(speechSynthesis.getVoices()) || voice; } catch {}
 }
 try { pickVoice(); speechSynthesis.addEventListener?.("voiceschanged", pickVoice); } catch {}
-function browserSay(text, slow) {
+export const voiceName = () => { if (!voice) pickVoice(); return voice ? voice.name : ""; };
+
+let seq = 0;
+function utter(text, slow) {
+  const u = new SpeechSynthesisUtterance(text);
+  if (!voice) pickVoice();
+  if (voice) { u.voice = voice; u.lang = voice.lang; } else u.lang = "en-US";
+  u.rate = slow ? 0.6 : 0.9;
+  return u;
+}
+function stop() {
   try {
     const s = window.speechSynthesis;
-    if (s.speaking || s.pending) s.cancel(); // cancel() right before speak() can swallow the next line on iOS
+    if (s.speaking || s.pending) s.cancel(); // cancel() when idle can swallow the next line on iOS
     s.resume?.();
-    const u = new SpeechSynthesisUtterance(text);
-    if (voice) u.voice = voice;
-    u.lang = "en-US";
-    u.rate = slow ? 0.6 : 0.85;
-    s.speak(u);
-  } catch {}
+    return s;
+  } catch { return null; }
 }
 
-// ---- Natural voice from the server ----
-const SILENT = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
-let audio = null;
-const getAudio = () => (audio ||= Object.assign(new Audio(), { preload: "auto" }));
-const urls = new Map(); // text -> Promise<objectURL | null>
-let serverOff = false;
-function fetchVoice(text) {
-  if (serverOff || !isServer()) return Promise.resolve(null);
-  if (!urls.has(text)) urls.set(text, fetch("/api/tts", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ text }) })
-    .then(async (r) => {
-      if (r.status === 503) serverOff = true;
-      if (!r.ok || !(r.headers.get("content-type") || "").includes("audio")) { urls.delete(text); return null; }
-      return URL.createObjectURL(await r.blob());
-    })
-    .catch(() => { urls.delete(text); return null; }));
-  return urls.get(text);
-}
-let ready = new Map(); // text -> objectURL once fetched
-let token = 0;
-let longSeq = 0;
-export function say(text, slow) { longSeq++; speak(text, slow); }
-function speak(text, slow) {
+export function say(text, slow) {
+  seq++;
   if (!text) return;
-  const my = ++token;
-  try { window.speechSynthesis?.cancel(); } catch {}
-  const a = getAudio();
-  a.onended = null;
-  const play = (url) => { a.pause(); a.src = url; a.playbackRate = slow ? 0.7 : 1; return a.play(); };
-  const url = ready.get(text);
-  if (url) { play(url).catch(() => browserSay(text, slow)); return; }
-  if (serverOff || !isServer()) { browserSay(text, slow); return; }
-  // Unlock the audio element inside the tap, then play when the voice arrives.
-  try { a.src = SILENT; a.play().catch(() => {}); } catch {}
-  const p = fetchVoice(text);
-  const slowNet = setTimeout(() => { if (my === token && !ready.get(text)) { token++; browserSay(text, slow); } }, 2500);
-  p.then((u) => {
-    clearTimeout(slowNet);
-    if (u) ready.set(text, u);
-    if (my !== token) return;
-    if (u) play(u).catch(() => browserSay(text, slow)); else browserSay(text, slow);
-  });
+  const s = stop();
+  try { s?.speak(utter(text, slow)); } catch {}
 }
-// Fetch ahead so a tap plays instantly (and inside the tap, which iPad Safari requires).
-export function warm(texts) { for (const t of texts) if (t) fetchVoice(t).then((u) => u && ready.set(t, u)); }
 
-// Longer text (a whole story): split into sentences and play them one after another.
+// Kept so callers can prefetch; the device voice needs no download.
+export function warm() {}
+
+// Longer text (a whole story): speak sentence by sentence, since iOS can cut off long utterances.
 export function sayLong(text) {
-  const parts = (String(text).match(/[^.!?]+[.!?]+["”’]?\s*|[^.!?]+$/g) || [text]).reduce((acc, s) => {
-    if (acc.length && (acc[acc.length - 1] + s).length < 280) acc[acc.length - 1] += s; else acc.push(s);
-    return acc;
-  }, []).map((s) => s.trim()).filter(Boolean);
-  if (serverOff || !isServer() || parts.length < 2) { say(text); return; }
-  warm(parts);
-  const id = ++longSeq;
+  const parts = String(text).match(/[^.!?]+[.!?]+["”’]?\s*|[^.!?]+$/g)?.map((p) => p.trim()).filter(Boolean) || [];
+  if (parts.length < 2) { say(text); return; }
+  const id = ++seq;
+  const s = stop();
+  if (!s) return;
   let i = 0;
-  const playNext = () => { if (id !== longSeq || i >= parts.length) return; speak(parts[i++]); getAudio().onended = playNext; };
-  playNext();
+  const next = () => {
+    if (id !== seq || i >= parts.length) return;
+    const u = utter(parts[i++]);
+    u.onend = next;
+    try { s.speak(u); } catch {}
+  };
+  next();
 }
