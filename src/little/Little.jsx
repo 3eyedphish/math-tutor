@@ -188,7 +188,8 @@ function Play({ lesson, subject, profile, onQuit, onFinish }) {
 }
 
 function Choice({ c }) {
-  if (c.t === "num") return <span className="lt-num">{c.v}{c.dots && <Dots n={c.v} small />}</span>;
+  // Numbers 1–6 always show their die face underneath (he likes matching the number to the dots).
+  if (c.t === "num") return <span className="lt-num">{c.v}{c.v >= 1 && c.v <= 6 && <Dots n={c.v} small />}</span>;
   if (c.t === "dots") return <Dots n={c.v} />;
   if (c.t === "group") return <span className="lt-group">{Array.from({ length: c.n }, (_, k) => <span key={k}>{c.e}</span>)}</span>;
   if (c.t === "shape") return <Shape v={c.v} color={c.color} />;
@@ -262,7 +263,7 @@ function useObjSize(n, groups = 1) {
   const avail = Math.min(w, 720) - 32 - 30 - 28, c = cols(n);
   const rows = Math.ceil(n / c) * groups;
   // Leave room for the answers below the picture (matters when the screen is turned sideways).
-  const byH = Math.floor((h * 0.36 - rows * 10 - groups * 40) / rows);
+  const byH = Math.floor((h * 0.33 - rows * 10 - groups * 40) / rows);
   return Math.max(36, Math.min(130, byH, Math.floor((avail - (c - 1) * 10) / c)));
 }
 
