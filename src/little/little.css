@@ -96,7 +96,7 @@
 .lt-slots span.on { border-color: var(--good); }
 .lt-trace { display: flex; flex-direction: column; align-items: center; gap: 0.7rem; width: 100%; }
 .lt-canvas { touch-action: none; background: #fff; border-radius: 26px; border: 4px solid color-mix(in srgb, var(--uc) 45%, var(--line)); }
-.lt-trace-bar { width: min(340px, 90%); height: 14px; border-radius: 7px; background: var(--chip); overflow: hidden; }
+.lt-trace-bar { width: min(560px, 90%); height: 14px; border-radius: 7px; background: var(--chip); overflow: hidden; }
 .lt-trace-bar div { height: 100%; background: var(--good); transition: width 0.2s; }
 .center-row { justify-content: center; gap: 0.8rem; margin-top: 0.6rem; }
 .lt-done-stars span { font-size: 4.4rem; margin: 0 0.2rem; display: inline-block; }
@@ -106,12 +106,6 @@
 .lt-sticker-won small { font-weight: 800; color: var(--ink-2); }
 .big-ghost { font-size: 1.2rem; padding: 0.8rem 1.3rem; }
 :root[data-theme="dark"] .lt-canvas, :root[data-theme="dark"] .lt-dice, :root[data-theme="dark"] .lt-frame { background: #fff; }
-@media (max-width: 480px) {
-  .lt-choice { min-width: 90px; min-height: 90px; }
-  .lt-obj { width: 52px; height: 52px; font-size: 2.3rem; }
-  .lt-num { font-size: 3.2rem; } .lt-letter { font-size: 3.6rem; }
-  .lt-bigletter { font-size: 5.5rem; }
-  .lt-slots span { width: 44px; height: 60px; font-size: 2.6rem; }
 }
 
 /* Grown-ups → Little learner */
@@ -119,3 +113,69 @@
 .lt-plessons { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.4rem 0; }
 .lt-plessons span { font-size: 0.85rem; padding: 0.15rem 0.55rem; border-radius: 999px; background: var(--card); color: var(--ink-2); }
 .lt-plessons span.on { color: var(--ink); font-weight: 700; border: 1px solid var(--uc); }
+
+/* Big, forgiving targets for small hands (tuned for phones and fold-out inner screens) */
+.lt-play { padding: 0.9rem 0.8rem 1.2rem; }
+.lt-play > .row .ghost.small { min-width: 56px; min-height: 56px; font-size: 1.3rem; }
+.lt-hear { width: 76px; height: 76px; font-size: 2.3rem; }
+.lt-objects { flex-direction: column; gap: 0.5rem; width: 100%; cursor: pointer; padding: 0.4rem 0; }
+.lt-objgroup-wrap { flex-direction: column; gap: 0.3rem; }
+.lt-objgroup { grid-template-columns: repeat(var(--cols, 5), var(--os, 90px)); gap: 10px; padding: 12px; border-radius: 26px; }
+.lt-obj { width: var(--os, 90px); height: var(--os, 90px); font-size: calc(var(--os, 90px) * 0.7); display: flex; align-items: center; justify-content: center; border-radius: 22px; }
+.lt-obj i { width: calc(var(--os, 90px) * 0.34); height: calc(var(--os, 90px) * 0.34); font-size: calc(var(--os, 90px) * 0.2); top: -4px; right: -4px; }
+.lt-op { font-size: 3.4rem; line-height: 1; }
+.lt-count-hint { min-height: 52px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--ink-2); font-size: 1.15rem; }
+.lt-count-hint .lt-mini { font-size: 1.1rem; min-height: 52px; padding: 0.5rem 1.2rem; }
+.lt-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; width: 100%; max-width: 720px; }
+.lt-choices.n2, .lt-choices.n4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lt-name .lt-choices { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+.lt-choice { width: 100%; min-width: 0; min-height: 150px; border-width: 5px; border-radius: 30px; padding: 0.8rem 0.5rem; }
+.lt-num { font-size: clamp(4.5rem, 16vw, 7rem); }
+.lt-letter { font-size: clamp(5rem, 17vw, 7.5rem); }
+.lt-emoji { font-size: clamp(4rem, 14vw, 6rem); }
+.lt-group { font-size: clamp(2.2rem, 7vw, 3.2rem); }
+.lt-num .lt-dice.small { grid-template-columns: repeat(3, 14px); gap: 4px; padding: 6px; }
+.lt-num .lt-dice.small i { width: 14px; height: 14px; }
+.lt-choice .lt-dice { grid-template-columns: repeat(3, 30px); }
+.lt-choice .lt-dice i { width: 30px; height: 30px; }
+.lt-choice .lt-frame { grid-template-columns: repeat(5, 22px); }
+.lt-choice .lt-frame i { width: 22px; height: 22px; }
+.lt-shape { width: 120px; height: 120px; }
+.lt-shape.big { width: min(80vw, 380px); height: min(80vw, 380px); cursor: pointer; }
+.lt-tapset-row { display: flex; align-items: center; justify-content: center; gap: 1.6rem; }
+.lt-check, .lt-less { width: 110px; height: 110px; font-size: 3rem; }
+.lt-less { border-radius: 50%; background: var(--chip); color: var(--ink); border: 4px solid var(--line); box-shadow: 0 6px 0 var(--line); }
+.lt-bignum.small { font-size: 4rem; min-width: 3ch; text-align: center; }
+.lt-track span { min-width: 64px; height: 76px; font-size: 2.4rem; }
+.lt-pattern { font-size: clamp(2.6rem, 9vw, 3.6rem); }
+.lt-pattern span { width: auto; min-width: 64px; height: 80px; }
+.lt-picture { font-size: clamp(4.5rem, 16vw, 6rem); padding: 0.6rem 1.1rem; }
+.lt-picture small { font-size: 1.2rem; }
+.lt-slots span { width: clamp(48px, 13vw, 80px); height: 90px; font-size: clamp(2.8rem, 10vw, 4rem); }
+.lt-stop { font-size: 1.35rem; min-height: 88px; }
+.lt-stop-emoji { font-size: 2.8rem; }
+.lt .subject-tabs button { min-height: 76px; }
+@media (max-width: 480px) { .lt-choice { min-height: 130px; } .lt-check, .lt-less { width: 88px; height: 88px; font-size: 2.6rem; } .lt-tapset-row { gap: 0.8rem; } .lt-play { padding: 0.8rem 0.6rem 1rem; } }
+
+/* Screen lock for little learners (see useScreenLock) */
+html.lt-lock, html.lt-lock body { overscroll-behavior: none; -webkit-touch-callout: none; touch-action: pan-y; }
+html.lt-lock * { -webkit-touch-callout: none; }
+html.lt-still, html.lt-still body { overflow: hidden; height: 100%; touch-action: none; }
+html.lt-still body { position: fixed; inset: 0; width: 100%; }
+html.lt-still .app { height: 100dvh; overflow: hidden; align-items: flex-start; }
+html.lt-still .lt-play { min-height: 0; max-height: calc(100dvh - 32px); margin-top: 0; overflow: hidden; }
+@media (max-height: 700px) {
+  .lt-choice { min-height: 96px; padding: 0.4rem; }
+  .lt-num { font-size: 4rem; } .lt-letter { font-size: 4.4rem; } .lt-emoji { font-size: 3.6rem; }
+  .lt-num .lt-dice.small { display: none; }
+  .lt-hear { width: 60px; height: 60px; font-size: 1.8rem; }
+  .lt-check, .lt-less { width: 84px; height: 84px; font-size: 2.4rem; }
+  .lt-q { gap: 0.6rem; padding: 0.2rem 0; }
+  .lt-shape.big { width: min(40vh, 280px); height: min(40vh, 280px); }
+  .lt-bigletter { font-size: 5rem; }
+  .lt-count-hint { min-height: 44px; }
+}
+@media (max-height: 700px) {
+  .lt-meet { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 0.8rem; }
+  .lt-picture { font-size: 3.2rem; padding: 0.4rem 0.8rem; }
+}
