@@ -12,6 +12,7 @@ export default function Profiles({ profiles, onPick, onCreated, mode }) {
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState(AVATARS[0]);
   const [newPin, setNewPin] = useState("");
+  const [stage, setStage] = useState("big");
 
   const tryPin = async (p, value) => {
     if (await store.checkPin(p, value)) onPick(p);
@@ -41,8 +42,13 @@ export default function Profiles({ profiles, onPick, onCreated, mode }) {
         <label className="field">Name<input value={name} onChange={(e) => setName(e.target.value)} placeholder="First name" maxLength={20} autoComplete="off" /></label>
         <div className="field">Pick a buddy</div>
         <div className="avatar-grid">{AVATARS.map((a) => <button key={a} className={`avatar ${a === avatar ? "chosen" : ""}`} onClick={() => setAvatar(a)}>{a}</button>)}</div>
+        <div className="field">Which games?</div>
+        <div className="stage-pick">
+          <button className={stage === "big" ? "chosen" : ""} onClick={() => setStage("big")}><span>🧮</span><b>Big kid</b><small>Math Adventure, Math Gym, Spelling lists</small></button>
+          <button className={stage === "preschool" ? "chosen" : ""} onClick={() => setStage("preschool")}><span>🧸</span><b>Little learner</b><small>Ages 3–5: counting, shapes, ABC letters. All spoken, all taps.</small></button>
+        </div>
         <label className="field">Secret code (optional, 4 digits)<input value={newPin} inputMode="numeric" pattern="[0-9]*" onChange={(e) => setNewPin(e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="Leave blank for none" /></label>
-        <button className="primary" disabled={!name.trim() || (newPin && newPin.length !== 4)} onClick={async () => { const p = await store.createProfile({ name: name.trim(), avatar, pin: newPin }); onCreated(p); }}>Create player</button>
+        <button className="primary" disabled={!name.trim() || (newPin && newPin.length !== 4)} onClick={async () => { const p = await store.createProfile({ name: name.trim(), avatar, pin: newPin, stage }); onCreated(p); }}>Create player</button>
         {profiles.length > 0 && <button className="ghost" onClick={() => setAdding(false)}>Cancel</button>}
       </div>
     );

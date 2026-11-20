@@ -327,3 +327,10 @@ td.mm-f { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 60%, tran
 .sort-regions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin: 0.3rem 0 0.6rem; }
 .sort-regions .chipbtn { min-height: 46px; padding: 0.4rem 1rem; font-size: 1.05rem; }
 .lab .gym-stations { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+
+/* New player: big kid or little learner */
+.stage-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.stage-pick button { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; padding: 0.8rem 0.6rem; border-radius: 18px; background: var(--chip); border: 3px solid transparent; text-align: center; }
+.stage-pick button.chosen { border-color: var(--accent); }
+.stage-pick span { font-size: 2.2rem; }
+.stage-pick small { color: var(--ink-2); font-size: 0.8rem; line-height: 1.3; }

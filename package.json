@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "test": "node test/generators.test.mjs && node test/learning.test.mjs && node test/gym.test.mjs && node test/lab.test.mjs && node test/help.test.mjs && node test/unit4.test.mjs && node test/mission.test.mjs && node test/focus.test.mjs && node test/spell.test.mjs",
+    "test": "node test/generators.test.mjs && node test/learning.test.mjs && node test/gym.test.mjs && node test/lab.test.mjs && node test/help.test.mjs && node test/unit4.test.mjs && node test/mission.test.mjs && node test/focus.test.mjs && node test/spell.test.mjs && node test/little.test.mjs",
     "deploy": "node build.mjs && wrangler deploy",
     "db:init": "wrangler d1 execute mathtutor --remote --file=worker/schema.sql"
   },
