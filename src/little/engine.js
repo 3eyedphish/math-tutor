@@ -163,10 +163,11 @@ function shapeHint(s) {
 }
 
 // ── Letters ─────────────────────────────────────────────────────────────────
-// say: how the voice says the letter's name. snd: the sound, written for the voice.
+// say: how the voice says the letter's name. A is the quoted capital letter: spelled "ay" it was
+// read as "aye" (the sound of I), which confused him. snd: the sound, written for the voice.
 // words: pictures that start with the letter (X: end with it).
 export const LETTERS = {
-  A: { say: "ay", snd: "ah", words: [["apple", "🍎"], ["ant", "🐜"], ["alligator", "🐊"]] },
+  A: { say: '"A"', snd: "ah", words: [["apple", "🍎"], ["ant", "🐜"], ["alligator", "🐊"]] },
   B: { say: "bee", snd: "buh", words: [["ball", "⚽"], ["bear", "🐻"], ["banana", "🍌"], ["bus", "🚌"]] },
   C: { say: "see", snd: "kuh", words: [["cat", "🐱"], ["car", "🚗"], ["cake", "🎂"], ["cow", "🐮"]] },
   D: { say: "dee", snd: "duh", words: [["dog", "🐶"], ["duck", "🦆"], ["dinosaur", "🦕"], ["door", "🚪"]] },

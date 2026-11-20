@@ -14,6 +14,7 @@ import { MuscleMap } from "../gym/Gym.jsx";
 import SpellPanel from "../spell/SpellPanel.jsx";
 import { AVATARS } from "./Profiles.jsx";
 import LittlePanel from "../little/LittlePanel.jsx";
+import VoicePicker from "../spell/VoicePicker.jsx";
 import { isLittle, setStage } from "../little/engine.js";
 
 // A multiplication gate keeps kids out of the grown-up area.
@@ -103,6 +104,7 @@ export default function Parent({ profile, state, persist, onClose, onProfileChan
       {tab === "facts" && <><FactGrid facts={state.facts} /><GymPanel state={state} persist={(s) => { persist(s); force((x) => x + 1); }} /></>}
       {tab === "settings" && (
         <div className="settings">
+          <VoicePicker />
           <div className="field">Which games does {profile.name} see?
             <div className="stage-pick">
               <button className={!isLittle(state) ? "chosen" : ""} onClick={() => { setStage(state, "big"); persist(state); setTab("settings"); force((x) => x + 1); }}><span>🧮</span><b>Big kid</b><small>Math Adventure, Math Gym, Spelling lists</small></button>
