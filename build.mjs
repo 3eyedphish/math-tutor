@@ -23,6 +23,9 @@ const html = readFileSync(join(root, "public/index.template.html"), "utf8").repl
 writeFileSync(join(out, "index.html"), html);
 cpSync(join(root, "public/manifest.webmanifest"), join(out, "manifest.webmanifest"));
 cpSync(join(root, "public/icons"), join(out, "icons"), { recursive: true });
+// Pre-made voice clips (tools/voice). Not in the offline list below: the service worker keeps
+// each one once it has played, so the whole set never has to download at once.
+cpSync(join(root, "public/voice"), join(out, "voice"), { recursive: true });
 
 const files = ["./", "./index.html", "./manifest.webmanifest", ...readdirSync(join(out, "icons")).map((f) => `./icons/${f}`)];
 const hash = createHash("sha256").update(html).digest("hex").slice(0, 10);

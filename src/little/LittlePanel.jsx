@@ -1,5 +1,6 @@
 // Grown-ups → Little learner: progress by unit and lesson, tips for home, unlock everything.
-import { SUBJECTS, ensureLittle, unitProgress, lessonRec } from "./engine.js";
+import { SUBJECTS, ensureLittle, unitProgress, lessonRec, ABC, soundLine } from "./engine.js";
+import { say } from "../spell/speech.js";
 
 export default function LittlePanel({ state, persist }) {
   const lt = ensureLittle(state);
@@ -9,6 +10,12 @@ export default function LittlePanel({ state, persist }) {
     <div className="lt-panel">
       <p className="fine">Lessons are 5 short questions, all read aloud and answered by tapping. Stars come from first tries (3 = all or all but one). The next lesson opens when the one before it is finished, and each unit's first lesson opens when the unit before it is started, so he can hop between counting, shapes and letters.</p>
       <label className="field row"><input type="checkbox" checked={!!lt.unlockAll} onChange={(e) => { lt.unlockAll = e.target.checked; persist(state); }} /> Open every lesson (skip the unlocking)</label>
+      <h3>Hear every letter</h3>
+      <p className="fine">Each letter's name and sound, as the lessons say them. Tap one, or play A to Z.</p>
+      <div className="row" style={{ flexWrap: "wrap", gap: "0.3rem" }}>
+        <button className="ghost small" onClick={() => say(ABC.map(soundLine).join(" "))}>▶ A to Z</button>
+        {ABC.map((L) => <button key={L} className="ghost small" style={{ minWidth: "2.6rem" }} onClick={() => say(soundLine(L))}>{L}{L.toLowerCase()}</button>)}
+      </div>
       {[["math", "🧮 Math"], ["abc", "🐝 Spelling: ABC letters"]].map(([s, label]) => (
         <div key={s}>
           <h3>{label}</h3>

@@ -9,7 +9,10 @@
 // The choice is per device (Grown-ups → Settings → Voice): "auto" (default), "natural", or a
 // device voice by name. Auto = an Enhanced/Premium device voice if one is listed, otherwise the
 // natural online voice when the server is reachable, otherwise the best plain device voice.
+// Lines that have a pre-made recording (all Little learner lines, see voice-clips.js) play that
+// recording instead, whatever the choice, so letter names and sounds are always said right.
 import { isServer } from "../engine/store.js";
+import { hasClip, clipUrl, sentences, speakable } from "./voice-clips.js";
 
 const LS_KEY = "mt.voice";
 const getChoice = () => { try { return localStorage.getItem(LS_KEY) || "auto"; } catch { return "auto"; } };
@@ -79,52 +82,109 @@ function stopDevice() {
     return s;
   } catch { return null; }
 }
-function deviceSay(text, slow, v) { const s = stopDevice(); try { s?.speak(utter(text, slow, v)); } catch {} }
+function deviceSay(text, slow, v, onend) {
+  const s = stopDevice();
+  let once = false, t = 0;
+  const end = () => { if (once) return; once = true; clearTimeout(t); onend?.(); };
+  try { const u = utter(text, slow, v); if (onend) { u.onend = end; u.onerror = end; } s?.speak(u); } catch { if (onend) setTimeout(end, 0); return; }
+  // Some devices never fire "end" (or have no voice at all): carry on after about as long as it takes to say.
+  if (onend) t = setTimeout(end, 1500 + text.length * (slow ? 120 : 80));
+}
 
-// ── Natural voice (online) ──────────────────────────────────────────────────
+// ── Playing audio (natural voice and pre-made clips) ────────────────────────
 const SILENT = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
 let audio = null;
 const getAudio = () => (audio ||= Object.assign(new Audio(), { preload: "auto" }));
-const urls = new Map(); // text -> Promise<objectURL | null>
-const ready = new Map(); // text -> objectURL
-function fetchVoice(text) {
-  if (serverOff || !isServer()) return Promise.resolve(null);
-  if (!urls.has(text)) urls.set(text, fetch("/api/tts", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ text }) })
+const urls = new Map(); // key -> Promise<objectURL | null>
+const ready = new Map(); // key -> objectURL
+function load(key, req) {
+  if (!urls.has(key)) urls.set(key, req()
     .then(async (r) => {
       if (r.status === 503) serverOff = true;
-      if (!r.ok || !(r.headers.get("content-type") || "").includes("audio")) { urls.delete(text); return null; }
-      const u = URL.createObjectURL(await r.blob()); ready.set(text, u); return u;
+      // A missing clip comes back as the app page (text/html), so check that it really is audio.
+      if (!r.ok || !(r.headers.get("content-type") || "").includes("audio")) { urls.delete(key); return null; }
+      const u = URL.createObjectURL(await r.blob()); ready.set(key, u); return u;
     })
-    .catch(() => { urls.delete(text); return null; }));
-  return urls.get(text);
+    .catch(() => { urls.delete(key); return null; }));
+  return urls.get(key);
 }
-function naturalSay(text, slow, my, onend) {
+function fetchVoice(text) {
+  if (serverOff || !isServer()) return Promise.resolve(null);
+  return load(text, () => fetch("/api/tts", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ text }) }));
+}
+const fetchClip = (sentence) => load("clip|" + sentence, () => fetch(clipUrl(sentence), { credentials: "same-origin" }));
+
+// Play audio from `get` (a key in `ready`, or a fetch). onend runs when it finishes; fallback runs
+// instead if it can't play (offline, missing, slow network), so a line is never just skipped.
+function playAudio(key, get, slow, my, onend, fallback) {
   try { window.speechSynthesis?.cancel(); } catch {}
   const a = getAudio();
-  a.onended = onend || null;
-  const fallback = () => { if (my === seq) deviceSay(text, slow, bestVoice(loadVoices())); };
-  const play = (url) => { a.pause(); a.src = url; a.playbackRate = slow ? 0.75 : 1; return a.play(); };
-  const url = ready.get(text);
-  if (url) { play(url).catch(fallback); return; }
-  try { a.src = SILENT; a.play().catch(() => {}); } catch {} // unlock audio inside the tap (iPad)
-  const slowNet = setTimeout(() => { if (my === seq && !ready.get(text)) { seq++; fallback(); } }, 2500);
-  fetchVoice(text).then((u) => { clearTimeout(slowNet); if (my !== seq) return; if (u) play(u).catch(fallback); else fallback(); });
+  let settled = false;
+  const fail = () => { if (settled || my !== seq) return; settled = true; fallback(); };
+  const play = (url) => {
+    if (settled || my !== seq) return;
+    settled = true;
+    a.onended = onend || null; // set only now: the silent unlock below must not count as the end
+    a.pause(); a.src = url; a.playbackRate = slow ? 0.75 : 1;
+    a.play().catch(() => { settled = false; fail(); });
+  };
+  const url = ready.get(key);
+  if (url) { play(url); return; }
+  try { a.onended = null; a.src = SILENT; a.play().catch(() => {}); } catch {} // unlock audio inside the tap (iPad)
+  const slowNet = setTimeout(() => { if (!ready.get(key)) fail(); }, 2500);
+  get().then((u) => { clearTimeout(slowNet); if (u) play(u); else fail(); });
+}
+function naturalSay(text, slow, my, onend) {
+  playAudio(text, () => fetchVoice(text), slow, my, onend, () => deviceSay(text, slow, bestVoice(loadVoices()), onend));
 }
 
 // ── Public ──────────────────────────────────────────────────────────────────
+// A line is split into sentences. A sentence with a pre-made clip plays the clip (letter names and
+// sounds are always right that way); the rest go to the chosen voice, with [B]/[/B/] marks made plain.
+function plan(text) {
+  const segs = [];
+  for (const s of sentences(text)) {
+    if (hasClip(s)) segs.push({ clip: s });
+    else { missing.add(s); const last = segs[segs.length - 1]; if (last && last.text) last.text += " " + s; else segs.push({ text: s }); }
+  }
+  return segs;
+}
+const missing = new Set(); // sentences said without a clip (checked by the browser tests)
+export const missingClips = () => [...missing];
+try { window.__voiceMisses = missingClips; } catch {}
+function speakText(text, slow, my, c, onend) {
+  const t = speakable(text);
+  if (c.kind === "natural") naturalSay(t, slow, my, onend);
+  else { try { getAudio().pause(); } catch {} deviceSay(t, slow, c.voice, onend); }
+}
+function run(segs, slow, my) {
+  const c = current();
+  let i = 0;
+  const next = () => {
+    if (my !== seq || i >= segs.length) return;
+    const g = segs[i++];
+    if (g.clip) playAudio("clip|" + g.clip, () => fetchClip(g.clip), slow, my, next, () => speakText(g.clip, slow, my, c, next));
+    else speakText(g.text, slow, my, c, next);
+  };
+  next();
+}
 export function say(text, slow) {
   const my = ++seq;
   if (!text) return;
-  const c = current();
-  if (c.kind === "natural") naturalSay(text, slow, my);
-  else { try { getAudio().pause(); } catch {} deviceSay(text, slow, c.voice); }
+  run(plan(text), slow, my);
 }
-// Fetch the natural voice ahead of time so a tap plays at once (no-op for device voices).
-export function warm(texts) { if (current().kind === "natural") for (const t of texts || []) if (t) fetchVoice(t); }
+// Fetch clips and the natural voice ahead of time so a tap plays at once.
+export function warm(texts) {
+  const natural = current().kind === "natural";
+  for (const t of texts || []) for (const g of plan(t || "")) {
+    if (g.clip) fetchClip(g.clip);
+    else if (natural) fetchVoice(speakable(g.text));
+  }
+}
 
 // Longer text (a whole story): sentence by sentence, since iOS can cut off long utterances.
 export function sayLong(text) {
-  const parts = String(text).match(/[^.!?]+[.!?]+["”’]?\s*|[^.!?]+$/g)?.map((p) => p.trim()).filter(Boolean) || [];
+  const parts = sentences(text);
   if (parts.length < 2) { say(text); return; }
   const id = ++seq;
   const c = current();

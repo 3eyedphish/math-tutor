@@ -3,9 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Particles } from "../ui/components.jsx";
 import { say, warm } from "../spell/speech.js";
-import { SUBJECTS, ensureLittle, makeRound, roundLines, finishLesson, isOpen, nextLesson, unitProgress, lessonRec, numWord, LETTERS, ABC, SHAPES, allLessons } from "./engine.js";
+import { SUBJECTS, ensureLittle, makeRound, roundLines, finishLesson, isOpen, nextLesson, unitProgress, lessonRec, numWord, LETTERS, ABC, SHAPES, allLessons, PRAISE, STAR_LINES } from "./engine.js";
 
-const PRAISE = ["Yes!", "Great job!", "You got it!", "Super!", "Wow, well done!", "That's right!"];
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
 const later = (fn, ms) => setTimeout(fn, ms);
 // Buttons react when the finger lifts, even if it slid a little on the way (a plain click is
@@ -426,7 +425,7 @@ function Done({ done, state, subject, onAgain, onNext, onHome }) {
   const idx = list.findIndex((l) => l.id === done.lesson.id);
   const nxt = list[idx + 1] && isOpen(state, subject, list[idx + 1].id) ? list[idx + 1] : null;
   const [boom, setBoom] = useState(0);
-  useEffect(() => { setBoom(1); say(done.stars === 3 ? "Amazing! Three stars!" : done.stars === 2 ? "Great work! Two stars!" : "You did it! One star!"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setBoom(1); say(STAR_LINES[done.stars] || STAR_LINES[1]); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className="card lt center" style={{ "--uc": done.lesson.unit.color }}>
       <Particles trigger={boom} big />

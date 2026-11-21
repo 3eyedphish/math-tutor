@@ -115,6 +115,20 @@ npm run build                 # writes dist/
 npx wrangler dev --var DEV_EMAIL:you@example.com   # local server with a local database
 ```
 
+### Little learner voice clips
+
+Every sentence Little learner says is a small recording in `public/voice/` (about 2,200 mp3s, 13 MB),
+so letter names and sounds are always said right, on every device, offline too. Lines write a
+letter's name as `[B]` and its sound as `[/B/]`; `tools/voice/make.py` speaks those from fixed
+phonetic spellings. The voice is Kokoro-82M (Apache-2.0), run locally, so it costs nothing.
+After changing any Little learner wording (`npm test` says so):
+
+```
+node tools/voice/lines.mjs                        # list the sentences
+python3 tools/voice/make.py --model <model dir>   # record the new ones (pip install kokoro-onnx soundfile; needs ffmpeg)
+node tools/voice/lines.mjs --ids                  # tell the app which recordings exist
+```
+
 Opening `dist/index.html` without the server runs in local mode: progress stays in that browser and a parent can enter an API key on the Grown-ups screen.
 
 ## Files
@@ -123,4 +137,5 @@ Opening `dist/index.html` without the server runs in local mode: progress stays 
 - `src/screens/` profiles, home, game, grown-ups
 - `src/gym/` Math Gym (workouts, speed record, muscle map); gym skills are in `src/engine/gymskills.js`
 - `worker/` Cloudflare Worker API and database schema
-- `public/` page template, manifest, service worker, icons
+- `public/` page template, manifest, service worker, icons, Little learner voice clips (`public/voice/`)
+- `tools/voice/` makes the voice clips

@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { deviceVoices, voiceChoice, setVoiceChoice, voiceName, say } from "./speech.js";
 import { isServer } from "../engine/store.js";
 
-const SAMPLE = 'Hi! This is the letter "A". "A" says ah, like apple. Can you spell the word ghost?';
+// No letter names here: in Little learner those play from built-in recordings, not this voice.
+const SAMPLE = "Hi! Can you spell the word ghost? Ghost. The ghost said boo!";
 
 export default function VoicePicker() {
   const [list, setList] = useState(deviceVoices());
@@ -29,6 +30,7 @@ export default function VoicePicker() {
         This device lists {list.length} English voice{list.length === 1 ? "" : "s"} to the app{enhanced.length ? `, ${enhanced.length} of them Enhanced/Premium (⭐)` : ", none of them Enhanced"}.
         {hasAllison ? " Allison is in the list: pick it above." : " Allison isn't in the list. iPhone and iPad often don't let web pages and home-screen apps use downloaded Enhanced voices, even when Settings shows them. The Natural voice (online) is the closest match, and Automatic uses it when no Enhanced voice is listed."}
       </p>
+      <p className="fine">Little learner doesn't use this voice: every line there, with each letter's name and sound, plays from a recording built into the app, so it sounds the same on every device and works offline.</p>
     </div>
   );
 }
