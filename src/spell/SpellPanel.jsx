@@ -39,7 +39,7 @@ export default function SpellPanel({ state, persist }) {
   };
 
   if (edit) return (
-    <div className="settings sp-edit">
+    <div className="settings sp-edit sp-serif">
       <label className="field">List name<input value={edit.title} onChange={(e) => setEdit({ ...edit, title: e.target.value })} placeholder="Unit 5" /></label>
       <label className="field">Test date<input type="date" value={edit.testDate} onChange={(e) => setEdit({ ...edit, testDate: e.target.value })} /></label>
       <label className="field">Words, one per line. Optional: <code>word | example sentence | tip</code>
@@ -57,7 +57,7 @@ export default function SpellPanel({ state, persist }) {
   const now = Date.now();
   const tests = sp.log.filter((l) => l.mode === "test" && list.words.some((x) => x.w === l.w));
   return (
-    <div className="settings">
+    <div className="settings sp-serif">
       <div className="row between">
         <div><b>{list.title}</b>{list.testDate ? ` · test ${new Date(list.testDate + "T12:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}` : ""} · {list.words.length} words</div>
       </div>
