@@ -49,7 +49,7 @@ const G = {
   count({ lo = 1, hi = 5, dots = false }, rnd) {
     const n = int(lo, hi, rnd), t = pick(THINGS, rnd);
     const ch = numChoices(n, Math.max(1, lo - 1), hi + 1, 3, rnd).map((v) => ({ t: "num", v, dots }));
-    return withAnswer({ kind: "count", say: `How many ${t.many}? Tap each one to count.`, view: { t: "objects", groups: [{ e: t.e, n }], countable: true }, hint: `Let's count them together. Touch each ${t.one} and say the number.`, reveal: `There are ${numWord(n)} ${thingName(t, n)}.` }, ch, (c) => c.v === n);
+    return withAnswer({ kind: "count", say: `How many ${t.many}? Tap each one to count.`, view: { t: "objects", groups: [{ e: t.e, n }], countable: true }, hint: `Let's count them together. Touch each ${t.one} and say the number.`, reveal: `There ${n === 1 ? "is" : "are"} ${numWord(n)} ${thingName(t, n)}.` }, ch, (c) => c.v === n);
   },
   // Tap exactly n things, then the check button.
   show({ lo = 1, hi = 5 }, rnd) {
@@ -95,7 +95,7 @@ const G = {
     const others = shuffle(set.filter((s) => s !== want), rnd).slice(0, 2);
     const colors = shuffle(SHAPE_COLORS, rnd);
     const ch = shuffle([want, ...others], rnd).map((v, i) => ({ t: "shape", v, color: colors[i] }));
-    return withAnswer({ kind: "shape", say: `Find the ${SHAPES[want].name}.`, view: null, hint: shapeHint(want), reveal: `This is a ${SHAPES[want].name}.` }, ch, (c) => c.v === want);
+    return withAnswer({ kind: "shape", say: `Find the ${SHAPES[want].name}.`, view: null, hint: shapeHint(want), reveal: `This is ${/^[aeiou]/.test(SHAPES[want].name) ? "an" : "a"} ${SHAPES[want].name}.` }, ch, (c) => c.v === want);
   },
   // How many sides (straight edges)?
   sides(_, rnd) {
@@ -163,43 +163,48 @@ function shapeHint(s) {
 }
 
 // ── Letters ─────────────────────────────────────────────────────────────────
-// say: how the voice says the letter's name. A is the quoted capital letter: spelled "ay" it was
-// read as "aye" (the sound of I), which confused him. snd: the sound, written for the voice.
-// words: pictures that start with the letter (X: end with it).
-export const LETTERS = {
-  A: { say: '"A"', snd: "ah", words: [["apple", "🍎"], ["ant", "🐜"], ["alligator", "🐊"]] },
-  B: { say: "bee", snd: "buh", words: [["ball", "⚽"], ["bear", "🐻"], ["banana", "🍌"], ["bus", "🚌"]] },
-  C: { say: "see", snd: "kuh", words: [["cat", "🐱"], ["car", "🚗"], ["cake", "🎂"], ["cow", "🐮"]] },
-  D: { say: "dee", snd: "duh", words: [["dog", "🐶"], ["duck", "🦆"], ["dinosaur", "🦕"], ["door", "🚪"]] },
-  E: { say: "ee", snd: "eh", words: [["egg", "🥚"], ["elephant", "🐘"], ["envelope", "✉️"]] },
-  F: { say: "eff", snd: "fuh", words: [["fish", "🐟"], ["frog", "🐸"], ["fox", "🦊"], ["fire", "🔥"]] },
-  G: { say: "gee", snd: "guh", words: [["goat", "🐐"], ["gift", "🎁"], ["grapes", "🍇"], ["gorilla", "🦍"]] },
-  H: { say: "aitch", snd: "huh", words: [["hat", "🎩"], ["horse", "🐴"], ["house", "🏠"], ["heart", "❤️"]] },
-  I: { say: "eye", snd: "ih", words: [["iguana", "🦎"], ["ice cream", "🍦"], ["island", "🏝️"]] },
-  J: { say: "jay", snd: "juh", words: [["juice", "🧃"], ["jeans", "👖"], ["jack-o'-lantern", "🎃"]] },
-  K: { say: "kay", snd: "kuh", words: [["kite", "🪁"], ["key", "🔑"], ["kangaroo", "🦘"], ["king", "🤴"]] },
-  L: { say: "el", snd: "luh", words: [["lion", "🦁"], ["lemon", "🍋"], ["leaf", "🍃"], ["lollipop", "🍭"]] },
-  M: { say: "em", snd: "mmm", words: [["moon", "🌙"], ["monkey", "🐵"], ["mouse", "🐭"], ["milk", "🥛"]] },
-  N: { say: "en", snd: "nuh", words: [["nose", "👃"], ["nine", "9️⃣"], ["noodles", "🍜"]] },
-  O: { say: "oh", snd: "aw", words: [["octopus", "🐙"], ["otter", "🦦"], ["orange", "🍊"]] },
-  P: { say: "pee", snd: "puh", words: [["pig", "🐷"], ["pizza", "🍕"], ["penguin", "🐧"], ["pear", "🍐"]] },
-  Q: { say: "cue", snd: "kwuh", words: [["queen", "👸"], ["question mark", "❓"]] },
-  R: { say: "are", snd: "ruh", words: [["rabbit", "🐰"], ["rainbow", "🌈"], ["robot", "🤖"], ["rocket", "🚀"]] },
-  S: { say: "ess", snd: "sss", words: [["sun", "☀️"], ["snake", "🐍"], ["star", "⭐"], ["sock", "🧦"]] },
-  T: { say: "tee", snd: "tuh", words: [["tiger", "🐯"], ["tree", "🌳"], ["turtle", "🐢"], ["train", "🚂"]] },
-  U: { say: "you", snd: "uh", words: [["umbrella", "☂️"], ["up", "⬆️"], ["unicorn", "🦄"]] },
-  V: { say: "vee", snd: "vuh", words: [["violin", "🎻"], ["volcano", "🌋"], ["van", "🚐"]] },
-  W: { say: "double you", snd: "wuh", words: [["whale", "🐳"], ["watermelon", "🍉"], ["worm", "🪱"], ["watch", "⌚"]] },
-  X: { say: "ex", snd: "ks", end: true, words: [["fox", "🦊"], ["box", "📦"], ["six", "6️⃣"]] },
-  Y: { say: "why", snd: "yuh", words: [["yo-yo", "🪀"], ["yarn", "🧶"], ["yellow", "💛"]] },
-  Z: { say: "zee", snd: "zzz", words: [["zebra", "🦓"], ["zero", "0️⃣"], ["zipper mouth", "🤐"]] },
+// Spoken lines write a letter's name as [B] and its sound as [/B/]. Every Little learner sentence
+// has a pre-made recording (public/voice, made by tools/voice), in which [B] and [/B/] are spoken
+// from exact phonetic spellings, so "A" is never read as "uh" and "mmm" never as "M M M".
+// speech.js turns the marks into plain words only if a recording can't be played.
+// words: pictures that start with the letter's sound (X: end with it). Vowels use short-vowel words
+// only (apple, egg, iguana, octopus, umbrella), never ones that start with the letter's name.
+const W = (list) => list.split(", ").map((x) => { const [w, e] = x.split(" = "); return [w, e]; });
+const RAW = {
+  A: "apple = 🍎, ant = 🐜, alligator = 🐊",
+  B: "ball = ⚽, bear = 🐻, banana = 🍌, bus = 🚌",
+  C: "cat = 🐱, car = 🚗, cake = 🎂, cow = 🐮",
+  D: "dog = 🐶, duck = 🦆, dinosaur = 🦕, door = 🚪",
+  E: "egg = 🥚, elephant = 🐘, envelope = ✉️",
+  F: "fish = 🐟, frog = 🐸, fox = 🦊, fire = 🔥",
+  G: "goat = 🐐, gift = 🎁, grapes = 🍇, gorilla = 🦍",
+  H: "hat = 🎩, horse = 🐴, house = 🏠, heart = ❤️",
+  I: "iguana = 🦎, inchworm = 🐛, insect = 🦗",
+  J: "juice = 🧃, jeans = 👖, jack-o'-lantern = 🎃",
+  K: "kite = 🪁, key = 🔑, kangaroo = 🦘, king = 🤴",
+  L: "lion = 🦁, lemon = 🍋, leaf = 🍃, lollipop = 🍭",
+  M: "moon = 🌙, monkey = 🐵, mouse = 🐭, milk = 🥛",
+  N: "nose = 👃, nine = 9️⃣, noodles = 🍜",
+  O: "octopus = 🐙, otter = 🦦, ox = 🐂, olive = 🫒",
+  P: "pig = 🐷, pizza = 🍕, penguin = 🐧, pear = 🍐",
+  Q: "queen = 👸, question mark = ❓",
+  R: "rabbit = 🐰, rainbow = 🌈, robot = 🤖, rocket = 🚀",
+  S: "sun = ☀️, snake = 🐍, star = ⭐, sock = 🧦",
+  T: "tiger = 🐯, tree = 🌳, turtle = 🐢, train = 🚂",
+  U: "umbrella = ☂️, up = ⬆️, upside down = 🙃",
+  V: "violin = 🎻, volcano = 🌋, van = 🚐",
+  W: "whale = 🐳, watermelon = 🍉, worm = 🪱, watch = ⌚",
+  X: "fox = 🦊, box = 📦, six = 6️⃣",
+  Y: "yo-yo = 🪀, yarn = 🧶, yellow = 💛",
+  Z: "zebra = 🦓, zero = 0️⃣, zipper mouth = 🤐",
 };
+export const LETTERS = Object.fromEntries(Object.entries(RAW).map(([L, w]) => [L, { say: `[${L}]`, snd: `[/${L}/]`, words: W(w), ...(L === "X" ? { end: true } : {}) }]));
 export const ABC = Object.keys(LETTERS);
 // Letters that look alike (for "big and little") and letters that sound alike (never distractors for each other).
 const LOOKALIKE = { b: ["d", "p", "q"], d: ["b", "p", "q"], p: ["q", "b", "d"], q: ["p", "g", "d"], n: ["m", "u", "h"], m: ["n", "w"], u: ["n", "v"], w: ["m", "v"], i: ["l", "j"], l: ["i", "t"], g: ["q", "j"], a: ["e", "o"], e: ["a", "c"], c: ["o", "e"], o: ["c", "a"] };
 const SOUNDALIKE = { C: ["K", "Q", "S"], K: ["C", "Q"], Q: ["C", "K"], S: ["C", "Z"], Z: ["S"] };
 export const letterSay = (L) => LETTERS[L.toUpperCase()].say;
-// How the voice introduces a letter: "B says buh, like ball."
+// How the voice introduces a letter: "B says /b/, like ball."
 export const soundLine = (L) => { const x = LETTERS[L]; return `${cap(x.say)} says ${x.snd}, like ${x.words[0][0]}.`; };
 
 function otherLetters(L, pool, n, rnd, avoid = []) {
@@ -238,7 +243,7 @@ const LG = {
     const wrong = otherLetters(L, letters.filter((y) => !LETTERS[y].end), 2, rnd, ["X"]).map((y) => pick(LETTERS[y].words, rnd));
     const ch = shuffle([right, ...wrong], rnd).map(([word, e]) => ({ t: "emoji", v: e, word }));
     const say = x.end ? `Which picture ends with the ${x.snd} sound of ${x.say}?` : `${cap(x.say)} says ${x.snd}. Which picture starts with ${x.snd}?`;
-    return withAnswer({ kind: "sound", letter: L, say, view: { t: "letter", v: L, small: true }, hint: `Say each picture's name. Listen for ${x.snd} at the start.`, reveal: `${cap(right[0])} starts with ${x.snd}. ${cap(x.say)}!` }, ch, (c) => c.word === right[0]);
+    return withAnswer({ kind: "sound", letter: L, say, view: { t: "letter", v: L, small: true }, hint: `Say each picture's name. Listen for ${x.snd} at the start.`, reveal: `${cap(right[0])} starts with ${x.snd}, the sound of ${x.say}.` }, ch, (c) => c.word === right[0]);
   },
   // A picture: which letter does it start with?
   first({ letters }, rnd) {
@@ -262,7 +267,7 @@ const LG = {
   name({ name }, rnd) {
     const letters = String(name || "").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 10).split("");
     if (!letters.length) return null;
-    return { kind: "name", say: `Let's spell your name! ${letters.map((x) => LETTERS[x].say).join(", ")}. Tap the letters in order.`, letters, tiles: shuffle(letters.map((v, i) => ({ v, i })), rnd), view: { t: "name" } };
+    return { kind: "name", say: `Let's spell your name! ${letters.map((x) => `${LETTERS[x].say}.`).join(" ")} Tap the letters in order.`, letters, tiles: shuffle(letters.map((v, i) => ({ v, i })), rnd), view: { t: "name" } };
   },
 };
 
@@ -399,6 +404,22 @@ export function roundLines(round) {
     for (const c of q.choices || []) if (c.t === "num") lines.push(cap(numWord(c.v)) + ".");
   }
   return [...new Set(lines.filter(Boolean))];
+}
+
+// Fixed lines the Little learner screens say (besides each question's own lines). With the question
+// lines from roundLines, these are every sentence tools/voice records.
+export const PRAISE = ["Yes!", "Great job!", "You got it!", "Super!", "Wow, well done!", "That's right!"];
+export const STAR_LINES = { 3: "Amazing! Three stars!", 2: "Great work! Two stars!", 1: "You did it! One star!" };
+export function fixedLines() {
+  const out = [...PRAISE, ...Object.values(STAR_LINES), "Let's play!", "Pick a lesson!", "Math!", "Spelling! Let's learn our letters.", "Again!", "Not quite.", "Zero."];
+  for (const subj of Object.values(SUBJECTS)) for (const u of subj) { out.push(u.title); for (const l of u.lessons) out.push(`Let's play ${l.title}!`); }
+  for (let n = 0; n <= 20; n++) out.push(`${cap(numWord(n))}.`, `That's ${numWord(n)}.`);
+  for (const L of ABC) {
+    const x = LETTERS[L];
+    out.push(`${x.say}.`, `${x.say} says ${x.snd}.`, `Beautiful ${x.say}!`, `Look for ${x.say}.`, "Let's spell your name!", "Tap the letters in order.");
+    for (const [w] of x.words) out.push(`${cap(w)}.`);
+  }
+  return out;
 }
 
 // ── Progress ────────────────────────────────────────────────────────────────
