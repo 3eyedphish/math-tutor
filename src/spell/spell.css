@@ -57,3 +57,10 @@
 .subject-tabs button.focus { border-color: #2bb5c9; color: #0b6b78; background: #dcf6fa; }
 :root[data-theme="dark"] .subject-tabs button.focus { background: #0f3a42; color: #8fe7f3; }
 @media (max-width: 480px) { .subject-tabs button { font-size: 1.05rem; padding: 0.6rem 0.3rem; } }
+
+/* Serif type in the spelling sections so capital I and lowercase l look different (I has crossbars).
+   System fonts only, so it works offline: Iowan Old Style on iPad/iPhone/Mac, Georgia on Windows. */
+:root { --spell-font: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif; }
+.sp, .sp input, .sp textarea, .sp button, .sp select,
+.sp-serif, .sp-serif input, .sp-serif textarea, .sp-serif table { font-family: var(--spell-font); }
+.sp .sp-input, .sp .sp-write, .sp .sp-story, .sp .sp-chip, .sp .sp-word { font-variant-ligatures: none; }
